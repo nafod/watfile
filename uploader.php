@@ -14,18 +14,10 @@ function rate_limit($ip)
         {
             return true;
         } else {
-            $i = 0;
-            while (file_put_contents($data_dir.'/ratelimit/'.md5($ip), $curr+1, LOCK_EX) === false && $i < 3)
-            {
-                sleep(0.01); $i++;
-            }
+            write_file_safe($data_dir.'/ratelimit/'.md5($ip), $curr+1);
         }
     } else {
-        $i = 0;
-        while (file_put_contents($data_dir.'/ratelimit/'.md5($ip), 1, LOCK_EX) === false && $i < 3)
-        {
-            sleep(0.01); $i++;
-        }
+        write_file_safe($data_dir.'/ratelimit/'.md5($ip), 1);
     }
     return false;
 }
@@ -102,12 +94,12 @@ if(count($_FILES)>0) {
             exit();
         }
         mkdir($data_dir.'/hashes/'.$hash);
-        fclose(fopen($data_dir.'/hashes/'.$hash.'/'.$final_id, 'w'));
+        write_empty_file($data_dir.'/hashes/'.$hash.'/'.$final_id);
         mkdir($data_dir.'/delete/'.$delete_id);
-        fclose(fopen($data_dir.'/delete/'.$delete_id.'/'.$final_id, 'w'));
+        write_empty_file($data_dir.'/delete/'.$delete_id.'/'.$final_id);
         if(in_array(mime_content_type($upload_dir.$final_id.'/'.base64_encode($_FILES['upload']['name'])), $image_whitelist)) {
             if(getimagesize($upload_dir.$final_id.'/'.base64_encode($_FILES['upload']['name'])) === false) {
-                fclose(fopen($data_dir.'/forcedl/'.$final_id, 'w'));
+                write_empty_file($data_dir.'/forcedl/'.$final_id);
             }
         }
     }
@@ -134,22 +126,18 @@ if(count($_FILES)>0) {
     } else {
         $final_id = base_convert(unique_id(), 10, 36);
         mkdir($upload_dir.$final_id);
-        $i = 0;
-        while(file_put_contents($upload_dir.$final_id.'/'.base64_encode($_SERVER['HTTP_UP_FILENAME']), $content, LOCK_EX) === false && $i < 3) {
-            sleep(0.01); $i++;
-        }
-        if ($i === 3)
+        if (write_file_safe($upload_dir.$final_id.'/'.base64_encode($_SERVER['HTTP_UP_FILENAME']), $content))
         {
             echo make_result("error");
             exit();
         }
         mkdir($data_dir.'/hashes/'.$hash);
-        fclose(fopen($data_dir.'/hashes/'.$hash.'/'.$final_id, 'w'));
+        write_empty_file($data_dir.'/hashes/'.$hash.'/'.$final_id);
         mkdir($data_dir.'/delete/'.$delete_id);
-        fclose(fopen($data_dir.'/delete/'.$delete_id.'/'.$final_id, 'w'));
+        write_empty_file($data_dir.'/delete/'.$delete_id.'/'.$final_id);
         if(in_array(mime_content_type($upload_dir.$final_id.'/'.base64_encode($_SERVER['HTTP_UP_FILENAME'])), $image_whitelist)) {
             if(getimagesize($upload_dir.$final_id.'/'.base64_encode($_SERVER['HTTP_UP_FILENAME'])) === false) {
-                fclose(fopen($data_dir.'/forcedl/'.$final_id, 'w'));
+                write_empty_file($data_dir.'/forcedl/'.$final_id);
             }
         }
     }

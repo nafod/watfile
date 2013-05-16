@@ -22,7 +22,7 @@ if(password_verify($password, $password_valid) === false) {
     exit();
 }
 
-login($username, $account_dir.$username);
+login($username);
 
 var_dump($_SESSION);
 
