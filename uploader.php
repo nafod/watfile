@@ -126,9 +126,9 @@ if(count($_FILES)>0) {
     } else {
         $final_id = base_convert(unique_id(), 10, 36);
         mkdir($upload_dir.$final_id);
-        if (write_file_safe($upload_dir.$final_id.'/'.base64_encode($_SERVER['HTTP_UP_FILENAME']), $content))
+        if (write_file_safe($upload_dir.$final_id.'/'.base64_encode($_SERVER['HTTP_UP_FILENAME']), $content === false))
         {
-            echo make_result("error");
+            echo make_result("error2");
             exit();
         }
         mkdir($data_dir.'/hashes/'.$hash);

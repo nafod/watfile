@@ -55,20 +55,20 @@ function upload(file, xhr) {
                 var body = '--' + boundary + "\r\n";  
                 body += "Content-Disposition: form-data; name='upload'; filename='" + file.name + "'\r\n"; 
                 body += "Content-Type: application/octet-stream\r\n\r\n";  
-                body += reader.result + "\r\n";  
+                body += reader.result + "\r\n";
                 body += '--' + boundary + '--';      
-                xhr.open('POST', 'uploader.php?up=true', true);
+                xhr.open('POST', 'upload?up=true', true);
                 xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=' + boundary);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.setRequestHeader('UP-FILENAME', file.name);
                 xhr.setRequestHeader('UP-SIZE', file.size);
                 xhr.setRequestHeader('UP-TYPE', file.type);
                 xhr.setRequestHeader('UP-ID', upid);
-                xhr.onreadystatechange = function() { if (xhr.readyState == 4 && xhr.status == 200) { onComplete(xhr.responseText, file, dOutput, upid); }; };	
+                xhr.onreadystatechange = function() { if (xhr.readyState == 4 && xhr.status == 200) { onComplete(xhr.responseText, file, dOutput, upid); }; };
                 xhr.sendAsBinary(body); 
             // Chrome 7 sends data but you must use the base64_decode on the PHP side
             } else { 
-                xhr.open('POST', 'uploader.php?up=true&base64=true', true);
+                xhr.open('POST', 'upload?up=true&base64=true', true);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.setRequestHeader('UP-FILENAME', file.name);
                 xhr.setRequestHeader('UP-SIZE', file.size);
@@ -106,7 +106,7 @@ function upload(file, xhr) {
             }				
         }
             
-    reader = new FileReader();
+    var reader = new FileReader();
     // Firefox 3.6, WebKit
     if(reader.addEventListener) { 
         reader.addEventListener('loadend', this.loadEnd, false);
@@ -127,7 +127,7 @@ function upload(file, xhr) {
         var upid = Math.floor(Math.random()*1000000000);
         dOutput.innerHTML = "<li>Uploading... ( "+htmlEscape(file.name)+" )</li>"; 
         xhr = new XMLHttpRequest();
-        xhr.open('POST', 'uploader.php?up=true', true);
+        xhr.open('POST', 'upload?up=true', true);
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         xhr.setRequestHeader('UP-FILENAME', file.name);
         xhr.setRequestHeader('UP-SIZE', file.size);
