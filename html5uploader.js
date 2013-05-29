@@ -17,7 +17,7 @@ function onComplete(dat, f, d, uid)
         } else if (data == "size") {
             d.innerHTML = "<div id=\"error\">File is too big! ( "+htmlEscape(f.name)+" )</div>";
         } else if (data == "rate") {
-            d.innerHTML = "<div id=\"error\">Only 10 files per hour! ( "+htmlEscape(f.name)+" )</div>";
+            d.innerHTML = "<div id=\"error\">Only 6 files per minute! ( "+htmlEscape(f.name)+" )</div>";
         } else {
             var ext = htmlEscape(f.name.split('.').pop().toLowerCase());
             d.innerHTML = "<a href=\"http://s.watfile.com/"+data+'.'+ext+"\" class=\"uploaded\">http://s.watfile.com/"+data+'.'+ext+"</a> ( "+htmlEscape(f.name)+" )";

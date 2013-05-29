@@ -57,7 +57,7 @@ func RateLimit(ip string) bool {
 	if exists {
 		file_t, _ := os.Open(DATA_DIR + "/ratelimit/" + hash_t)
 		fileinfo_t, _ := file_t.Stat()
-		filemtime := fileinfo_t.Size()
+		filemtime := fileinfo_t.ModTime().Unix()
 		defer file_t.Close()
 		if filemtime+300 > time.Now().Unix() {
 			curr_t, _ := ioutil.ReadFile(DATA_DIR + "/ratelimit/" + hash_t)
@@ -134,7 +134,7 @@ func GetHash(hash string) string {
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	delete_id := ""
 	final_id := ""
-	if RateLimit(r.RemoteAddr) {
+	if RateLimit(r.Header["X-Real-Ip"][0]) {
 		fmt.Fprintf(w, MakeResult(r, "rate", ""))
 		return
 	}
@@ -160,7 +160,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					fmt.Fprintf(w, MakeResult(r, "size", ""))
 					return
 				}
-
 
 				buffer_t = buffer_t[:size_t]
 
@@ -228,7 +227,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Fprintf(w, MakeResult(r, "error", ""))
 	}
-    log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
+	log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
 	fmt.Fprintf(w, MakeResult(r, final_id, delete_id))
 }
 
@@ -336,9 +335,9 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=31536000, must-revalidate")
 	w.Header().Set("Last-Modified", fileinfo_t.ModTime().Format("Mon, 2 Jan 2006 15:04:05 MST"))
 	w.Header().Set("Content-Length", string(fileinfo_t.Size()))
-    //w.Header().Set("X-Accel-Redirect", "/protected/"+request_id+"/"+filename)
+	//w.Header().Set("X-Accel-Redirect", "/protected/"+request_id+"/"+filename)
 	http.ServeFile(w, r, UPLOAD_DIR+request_id+"/"+filename)
-    log.Printf("[LOG] File %s dowloaded\n", request_id)
+	log.Printf("[LOG] File %s dowloaded\n", request_id)
 	return
 }
 
