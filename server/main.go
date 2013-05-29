@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -48,6 +49,30 @@ func FormatSize(size int64) string {
 	return fmt.Sprintf("%d %s", size_t, units[id])
 }
 
+func RateLimit(ip string) bool {
+	md5_t := md5.New()
+	io.WriteString(md5_t, ip)
+	hash_t := hex.EncodeToString(md5_t.Sum(nil))
+	exists, _ := Exists(DATA_DIR + "/ratelimit/" + hash_t)
+	if exists {
+		file_t, _ := os.Open(DATA_DIR + "/ratelimit/" + hash_t)
+		fileinfo_t, _ := file_t.Stat()
+		filemtime := fileinfo_t.Size()
+		defer file_t.Close()
+		if filemtime+300 > time.Now().Unix() {
+			curr_t, _ := ioutil.ReadFile(DATA_DIR + "/ratelimit/" + hash_t)
+			if curr_t[0] == 30 {
+				return true
+			} else {
+				WriteFileSafe(DATA_DIR+"/ratelimit/"+hash_t, []byte{curr_t[0] + 1})
+			}
+			return false
+		}
+	}
+	WriteFileSafe(DATA_DIR+"/ratelimit/"+hash_t, []byte{1})
+	return false
+}
+
 func Exists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -80,7 +105,6 @@ func UniqueID(todo int) string {
 }
 
 func MakeResult(req *http.Request, t string, del string) string {
-	fmt.Printf("Gottem: |%s| %d\n", t, len(t))
 	if val, ok := req.Header["Up-Id"]; ok {
 		return string(val[0]) + "|" + del + "|" + t
 	}
@@ -110,56 +134,61 @@ func GetHash(hash string) string {
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	delete_id := ""
 	final_id := ""
+	if RateLimit(r.RemoteAddr) {
+		fmt.Fprintf(w, MakeResult(r, "rate", ""))
+		return
+	}
 	r.ParseMultipartForm(10 << 20) // 10MB
-	if _, ok := r.MultipartForm.File["upload"]; ok {
-		if len(r.MultipartForm.File["upload"]) == 0 {
-			fmt.Fprintf(w, MakeResult(r, "error", ""))
-			return
-		}
-		files_t := r.MultipartForm.File["upload"]
-		for _, file_t := range files_t {
-			buffer_t := make([]byte, 10<<20+1)
-			f, err := file_t.Open()
-			defer f.Close()
-
-			size_t, err := f.Read(buffer_t)
-			if err != nil {
+	if r.MultipartForm != nil {
+		if _, ok := r.MultipartForm.File["upload"]; ok {
+			if len(r.MultipartForm.File["upload"]) == 0 {
 				fmt.Fprintf(w, MakeResult(r, "error", ""))
 				return
 			}
-			if size_t > 10485761 {
-				fmt.Fprintf(w, MakeResult(r, "size", ""))
-				return
-			}
+			files_t := r.MultipartForm.File["upload"]
+			for _, file_t := range files_t {
+				buffer_t := make([]byte, 10<<20+1)
+				f, err := file_t.Open()
+				defer f.Close()
 
-			fmt.Printf("Filesize: %d\n", size_t)
-
-			buffer_t = buffer_t[:size_t]
-
-			md5_t := md5.New()
-			md5_t.Write(buffer_t)
-			hash_t := hex.EncodeToString(md5_t.Sum(nil))
-			fmt.Printf("hash is: %+v\n", hash_t)
-			delete_id = UniqueID(30)
-			exists_t, _ := Exists(HASH_DIR + hash_t + "/")
-			if exists_t {
-				final_id = GetHash(hash_t)
-				fmt.Printf("|%s|\n", final_id)
-			} else {
-				final_id = UniqueID(8)
-				fmt.Printf("LOG: %s\n", final_id)
-				os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
-				if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), buffer_t) == false {
+				size_t, err := f.Read(buffer_t)
+				if err != nil {
 					fmt.Fprintf(w, MakeResult(r, "error", ""))
 					return
 				}
-				os.Mkdir(HASH_DIR+hash_t, os.ModeDir)
-				WriteEmptyFile(HASH_DIR + hash_t + "/" + final_id)
-				os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
-				WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
-				/* Check image size and create forcedl here */
-			}
+				if size_t > 10485761 {
+					fmt.Fprintf(w, MakeResult(r, "size", ""))
+					return
+				}
 
+
+				buffer_t = buffer_t[:size_t]
+
+				md5_t := md5.New()
+				md5_t.Write(buffer_t)
+				hash_t := hex.EncodeToString(md5_t.Sum(nil))
+				delete_id = UniqueID(30)
+				exists_t, _ := Exists(HASH_DIR + hash_t + "/")
+				if exists_t {
+					final_id = GetHash(hash_t)
+				} else {
+					final_id = UniqueID(8)
+					os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
+					if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), buffer_t) == false {
+						fmt.Fprintf(w, MakeResult(r, "error", ""))
+						return
+					}
+					os.Mkdir(HASH_DIR+hash_t, os.ModeDir)
+					WriteEmptyFile(HASH_DIR + hash_t + "/" + final_id)
+					os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
+					WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
+					/* Check image size and create forcedl here */
+				}
+
+			}
+		} else {
+			fmt.Fprintf(w, MakeResult(r, "error", ""))
+			return
 		}
 	} else if r.FormValue("up") == "true" {
 		p := new(bytes.Buffer)
@@ -178,15 +207,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		md5_t := md5.New()
 		md5_t.Write(final_dat)
 		hash_t := hex.EncodeToString(md5_t.Sum(nil))
-		fmt.Printf("hash is: %+v\n", hash_t)
 		delete_id = UniqueID(30)
 		exists_t, _ := Exists(HASH_DIR + hash_t + "/")
 		if exists_t {
 			final_id = GetHash(hash_t)
-			fmt.Printf("|%s|\n", final_id)
 		} else {
 			final_id = UniqueID(8)
-			fmt.Printf("LOG: %s\n", final_id)
 			os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
 			if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), final_dat) == false {
 				fmt.Fprintf(w, MakeResult(r, "error", ""))
@@ -199,10 +225,10 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			/* Check image size and create forcedl here */
 		}
 
-		fmt.Printf("%s\n", r.Header["Up-Filename"][0])
 	} else {
 		fmt.Fprintf(w, MakeResult(r, "error", ""))
 	}
+    log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
 	fmt.Fprintf(w, MakeResult(r, final_id, delete_id))
 }
 
@@ -224,7 +250,6 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("%s\n", request_id)
 	exists, _ := Exists(UPLOAD_DIR + request_id + "/")
 	if exists == false {
 		http.Redirect(w, r, "http://watfile.com/", 303)
@@ -311,7 +336,9 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=31536000, must-revalidate")
 	w.Header().Set("Last-Modified", fileinfo_t.ModTime().Format("Mon, 2 Jan 2006 15:04:05 MST"))
 	w.Header().Set("Content-Length", string(fileinfo_t.Size()))
+    //w.Header().Set("X-Accel-Redirect", "/protected/"+request_id+"/"+filename)
 	http.ServeFile(w, r, UPLOAD_DIR+request_id+"/"+filename)
+    log.Printf("[LOG] File %s dowloaded\n", request_id)
 	return
 }
 
