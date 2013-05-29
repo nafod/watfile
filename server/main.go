@@ -15,13 +15,14 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const (
 	CONF_IP     = ":31114"
-	DATA_DIR    = "/var/www/data-watfile/test"
+	DATA_DIR    = "/var/www/data-watfile"
 	UPLOAD_DIR  = DATA_DIR + "/uploads/"
 	HASH_DIR    = DATA_DIR + "/hashes/"
 	ACCOUNT_DIR = DATA_DIR + "/accounts/"
@@ -85,23 +86,13 @@ func Exists(path string) (bool, error) {
 }
 
 func UniqueID(todo int) string {
-	const alphanum = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-	p := make([]byte, todo)
-	offset := 0
-	for {
-		val := int64(rand.Int())
-		for i := 0; i < 8; i++ {
-			p[offset] = alphanum[int(val&0xff)%len(alphanum)]
-			todo--
-			if todo == 0 {
-				return string(p)
-			}
-			offset++
-			val >>= 8
-		}
-	}
-
-	panic("unreachable")
+    exists := true
+    ret_t := ""
+    for exists {
+        ret_t = strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
+        exists, _ = Exists(UPLOAD_DIR+ret_t)
+    }
+    return ret_t
 }
 
 func MakeResult(req *http.Request, t string, del string) string {
