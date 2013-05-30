@@ -86,13 +86,13 @@ func Exists(path string) (bool, error) {
 }
 
 func UniqueID(todo int) string {
-    exists := true
-    ret_t := ""
-    for exists {
-        ret_t = strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
-        exists, _ = Exists(UPLOAD_DIR+ret_t)
-    }
-    return ret_t
+	exists := true
+	ret_t := ""
+	for exists {
+		ret_t = strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
+		exists, _ = Exists(UPLOAD_DIR + ret_t)
+	}
+	return ret_t
 }
 
 func MakeResult(req *http.Request, t string, del string) string {
@@ -212,7 +212,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			WriteEmptyFile(HASH_DIR + hash_t + "/" + final_id)
 			os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
 			WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
-			/* Check image size and create forcedl here */
 		}
 
 	} else {

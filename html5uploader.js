@@ -97,7 +97,7 @@ function upload(file, xhr) {
     
         // Reading Progress
         this.loadProgress = function(event) {
-            if (event.lengthComputable) {
+        if (event.lengthComputable) {
                 var percentage = Math.round((event.loaded * 100) / event.total);
                 if (percentage === 100)
                     dOutput.innerHTML = '<li>Processing... ( '+htmlEscape(file.name)+' )</li>';
@@ -113,8 +113,8 @@ function upload(file, xhr) {
         reader.addEventListener('error', this.loadError, false);
         reader.addEventListener('progress', this.loadProgress, false);
     
-    // Chrome 7
-    } else { 
+     Chrome 7
+    } else {
         reader.onloadend = this.loadEnd;
         reader.onerror = this.loadError;
         reader.onprogress = this.loadProgress;
