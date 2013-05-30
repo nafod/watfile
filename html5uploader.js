@@ -29,7 +29,7 @@ function onComplete(dat, f, d, uid)
         document.getElementsByTagName("ul")[0].appendChild(d);
     }
 }
-		
+
 function upload(file, xhr) {
     
     var dOutput = document.createElement("ul");
@@ -65,6 +65,7 @@ function upload(file, xhr) {
                 xhr.setRequestHeader('UP-TYPE', file.type);
                 xhr.setRequestHeader('UP-ID', upid);
                 xhr.onreadystatechange = function() { if (xhr.readyState == 4 && xhr.status == 200) { onComplete(xhr.responseText, file, dOutput, upid); }; };
+                xhr.upload.addEventListener('progress', loadProgress, false);
                 xhr.sendAsBinary(body); 
             // Chrome 7 sends data but you must use the base64_decode on the PHP side
             } else { 
@@ -75,6 +76,7 @@ function upload(file, xhr) {
                 xhr.setRequestHeader('UP-TYPE', file.type);
                 xhr.setRequestHeader('UP-ID', upid);
                 xhr.onreadystatechange = function() { if (xhr.readyState == 4 && xhr.status == 200) { onComplete(xhr.responseText, file, dOutput, upid); }; };	
+                xhr.upload.addEventListener('progress', loadProgress, false);
                 xhr.send(window.btoa(reader.result));
             }
         }
@@ -108,15 +110,14 @@ function upload(file, xhr) {
             
     var reader = new FileReader();
     // Firefox 3.6, WebKit
-    if(reader.addEventListener) { 
+    if(reader.addEventListener) {
         reader.addEventListener('loadend', this.loadEnd, false);
         reader.addEventListener('error', this.loadError, false);
-        reader.addEventListener('progress', this.loadProgress, false);
     } else {
         reader.onloadend = this.loadEnd;
         reader.onerror = this.loadError;
-        reader.onprogress = this.loadProgress;
     }
+
     // The function that starts reading the file as a binary string
     reader.readAsBinaryString(file);
      
