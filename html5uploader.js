@@ -112,8 +112,6 @@ function upload(file, xhr) {
         reader.addEventListener('loadend', this.loadEnd, false);
         reader.addEventListener('error', this.loadError, false);
         reader.addEventListener('progress', this.loadProgress, false);
-    
-     Chrome 7
     } else {
         reader.onloadend = this.loadEnd;
         reader.onerror = this.loadError;
