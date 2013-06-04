@@ -1,5 +1,4 @@
 /* HTML5 Uploader */
-
 /* Taken from http://stackoverflow.com/questions/1219860/javascript-jquery-html-encoding */
 function htmlEscape(str) {
     return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -7,7 +6,6 @@ function htmlEscape(str) {
 
 function onComplete(dat, f, d, uid)
 {
-    console.log(dat);
     var dsp = dat.split("|");
     if(Number(dsp[0]) === Number(uid) && dsp.length === 3)
     {
@@ -79,7 +77,7 @@ function upload(file, xhr) {
                 xhr.upload.addEventListener('progress', loadProgress, false);
                 xhr.send(window.btoa(reader.result));
             }
-        }
+        };
             
         // Loading errors
         this.loadError = function(event) {
@@ -101,10 +99,11 @@ function upload(file, xhr) {
         this.loadProgress = function(event) {
         if (event.lengthComputable) {
                 var percentage = Math.round((event.loaded * 100) / event.total);
-                if (percentage === 100)
+                if (percentage === 100) {
                     dOutput.innerHTML = '<li>Processing... ( '+htmlEscape(file.name)+' )</li>';
-                else 
+                } else  {
                     dOutput.innerHTML = '<li>Uploading : '+percentage+'% ( '+htmlEscape(file.name)+' )</li>';
+                }
             }				
         }
             
@@ -142,11 +141,10 @@ function handleFileSelect(evt) {
     evt.stopPropagation();
     evt.preventDefault();
     var files = evt.dataTransfer.files;
-    var xhrs = new Array();
+    var xhrs = [];
     for (var i = 0; i<files.length; i++) {
         var file = files[i];
         xhrs[i] = new XMLHttpRequest();
-        console.log(file);
         upload(file, xhrs[i]);
     }
     document.getElementById('dropzone').style.display='none';
@@ -167,5 +165,5 @@ function handleDragOff(evt) {
 window.addEventListener('dragover', handleDragOver, false);
 window.addEventListener('drop', handleFileSelect, false);
 window.addEventListener('dragleave', handleDragOff, false);
-document.getElementById("elem").onchange = function() { var xhrs = new Array(); for(var i = 0; i<this.files.length; i++) { xhrs[i] = new XMLHttpRequest(); upload(this.files[i], xhrs[i]); } };
+document.getElementById("elem").onchange = function() { var xhrs = []; for(var i = 0; i<this.files.length; i++) { xhrs[i] = new XMLHttpRequest(); upload(this.files[i], xhrs[i]); } };
 document.getElementById("select").addEventListener("click", function (e) { document.getElementById("elem").click(); e.preventDefault(); }, false);

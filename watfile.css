@@ -1,81 +1,109 @@
+@import url(http://fonts.googleapis.com/css?family=Lato:400,700);
+@import url('http://yui.yahooapis.com/3.5.0/build/cssreset/cssreset-min.css');
 @font-face {
-    font-family: 'GeometrySoftProBoldN';
-    src: url('fonts/Geometry_Soft_Pro-Bold_N-webfont.eot');
-    src: url('fonts/Geometry_Soft_Pro-Bold_N-webfont.eot?#iefix') format('embedded-opentype'),
-         url('fonts/Geometry_Soft_Pro-Bold_N-webfont.woff') format('woff'),
-         url('fonts/Geometry_Soft_Pro-Bold_N-webfont.ttf') format('truetype'),
-         url('fonts/Geometry_Soft_Pro-Bold_N-webfont.svg#GeometrySoftProBoldN') format('svg');
-    font-weight: normal;
-    font-style: normal;
+	font-family: 'GeometrySoftProBoldN';
+	src: url('fonts/Geometry_Soft_Pro-Bold_N-webfont.eot');
+	src: url('fonts/Geometry_Soft_Pro-Bold_N-webfont.eot?#iefix') format('embedded-opentype'),
+	url('fonts/Geometry_Soft_Pro-Bold_N-webfont.woff') format('woff'),
+	url('fonts/Geometry_Soft_Pro-Bold_N-webfont.ttf') format('truetype'),
+	url('fonts/Geometry_Soft_Pro-Bold_N-webfont.svg#GeometrySoftProBoldN') format('svg');
+	font-weight: normal;
+	font-style: normal;
 }
-html, body {
-	margin: 0px auto;
-	width: 99%;
-	background: #34495e;
-	color: #ecf0f1;
-	font-family: Lato, sans-serif;
-	height: 95%;
-}
-*, *:hover, *:focus, *:active {
-	-webkit-transition: all 100ms ease-in 0s;
-	-moz-transition: all 100ms ease-in 0s;
-	-o-transition: all 100ms ease-in 0s;
-	transition: all 100ms ease-in 0s;
-}
-#banner {
-	margin-top: -70px;
+/*Layout*/
+header {
+	height: 20vw;
+	min-height: 190px;
+	margin: 20px 0 20px 0;
 	width: 100%;
-	background-image: url('bg.svg');
-	background-position: center center;
-	background-color: #e74c3c;
-	background-repeat: no-repeat;
-	-webkit-background-size: contain;
-	     -o-background-size: contain;
-	        background-size: contain;
-	height: 25%;
-	min-height: 300px;
-	text-align: center;
-}
-#banner h1 {
-	font-family: 'GeometrySoftProBoldN', cursive;
-	font-size: 8rem;
-	margin-left: 300px;
-	padding-top: 80px;
+	padding: 80px 0 0 0;
 }
 #container {
 	max-width: 900px;
 	width: 80%;
 	margin: 0 auto;
-	text-align: center;
 }
 #dropzone {
 	position: absolute;
-	top: 0;
-	left: 0;
+	top: 0px;
+	left: 0px;
 	z-index: 2;
-	height: 100%;
+	height: 80%;
 	width: 100%;
+	padding-top: 20%;
 	display: none;
+}
+#status {
+	margin-top: 8px;
+}
+a#select {
+	display: inline-block;
+	padding: 15px 20%;
+	margin-bottom: 3px;
+	border-radius: 9px;
+	border-radius: 9px;
+}
+#status ul li {
+	padding: 0;
+	margin: 0;
+	overflow: hidden;
+}
+footer {
+	margin: 25px auto 25px auto;
+}
+footer li {
+	display: inline;
+}
+
+/*Styling*/
+html, body {
+	margin: 0px auto;
+	width: 99%;
+	background: #34495e;
+	font-family: Lato, sans-serif;
+	color: #ecf0f1;
+}
+* { /*This is probably uncalled for but I think it looks neat.*/
+	-webkit-transition: all 100ms ease-in 0s;
+	-moz-transition: all 100ms ease-in 0s;
+	-o-transition: all 100ms ease-in 0s;
+	transition: all 100ms ease-in 0s;
+}
+header {
+	background-image: url('bg.svg');
+	background-position: center center;
+	background-color: #e74c3c;
+	background-repeat: no-repeat;
+	background-size: contain;
+	text-align: center;
+	font-family: 'GeometrySoftProBoldN', cursive;
+	font-size: 9.5rem;
+	text-indent: 300px;
+}
+header a, header a:hover, header a:active {
+	color: #ecf0f1;
+	text-decoration: none;
+}
+#container {
+	text-align: center;
+}
+#dropzone {
+	overflow: hidden;
 	background: hsla(0,0%,0%,.7);
 	text-align: center;
 }
 #dropzone h1 {
-	margin-top: 30%;
 	font-size: 5rem;
 }
 #info p {
 	color: #bdc3c7;
 }
-strong {
+strong {/*Our strongs are very strong.*/
 	font-size: 1.5rem;
 	font-weight: bold;
 	color: #ecf0f1;
 }
 a#select {
-	display: inline-block;
-	padding: 15px 20%;
-	-webkit-border-radius: 9px;
-	border-radius: 9px;
 	background: #E74C3C;
 	color: #34495e;
 	font-size: 2rem;
@@ -88,47 +116,70 @@ a#select:hover {
 a#select:active {
 	background: #dc2d1b;
 }
-ul, li {
-	padding: 0;
-	margin: 0;
+#status ul li {
 	list-style-type: none;
 	font-size: 1.0rem;
 	text-align: left;
 	overflow: hidden;
-	-ms-text-overflow: ellipsis;
-	    text-overflow: ellipsis;
+	text-overflow: ellipsis;
 }
-li a {
-	font-weight: 600;
-}
-a.uploaded {
+a {
 	color: #3498db;
 }
-a.uploaded:hover {
+a:hover {
 	color: #2980b9;
 }
-a.uploaded:active {
+a:active {
 	color: #226a9b;
 }
-@media screen and (max-width: 780px) {
+a.uploaded {
+	font-weight: 600;
+}
+footer {
+	text-align: center;
+}
+footer li {
+	text-align: center;
+	list-style-type: none;
+}
+footer li + li::before {
+	/*Maybe it would be more elegant to have them as inline-blocks and use borders?*/
+	content: " | ";
+}
+
+/*Media queries*/
+@media (max-width: 810px) {
 	/* Screen thin-ness */
-	#banner {
+	header {
 		background-image: none;
+		min-height: 150px;
+		max-height: 150px;
+		height: 150px;
+		padding: 5px 0 0 0;
+		font-size: 8rem;
 		text-align: center;
-	}
-	#banner h1 {
-		margin-left: 0;
+		text-indent: 0;
 	}
 }
-@media screen and (max-width: 440px) {
-	#banner {
-		margin: -50px 0 0 0;
-		height: 150px;
+@media (max-height: 500px) {
+	header {
+		margin: 20px 0 20px 0;
+		padding: 5px 0 0 0;
+		background-image: none;
 		min-height: 150px;
+		max-height: 150px;
 		text-align: center;
+		text-indent: 0;
 	}
-	#banner h1 {
-		padding-top: 2rem;
+	#info p:nth-child(2) {
+		display: none;
+	}
+}
+@media (max-width: 440px), (max-width: 880px) and (-webkit-min-device-pixel-ratio: 2), (max-width: 880px) and (min-resolution: 2dppx), (max-width: 880px) and (min-resolution: 192dpi) {
+	header {
+		margin: 20px 0 20px 0;
+		min-height: 100px;
+		max-height: 100px;
 		font-size: 5rem;
 	}
 	#container {
@@ -142,24 +193,7 @@ a.uploaded:active {
 	#info p:nth-child(2) {
 		display: none;
 	}
-	li {
+	#status ul li {
 		margin-left: 10px;
-	}
-}
-@media screen and (max-height: 500px) {
-	#banner {
-		margin: 20px 0 0 0;
-		padding: 0;
-		background-image: none;
-		min-height: 100px;
-		text-align: center;
-	}
-	#banner h1 {
-		margin: 0;
-		display: inline;
-		font-size: 5rem;
-	}
-	#info p:nth-child(2) {
-		display: none;
 	}
 }
