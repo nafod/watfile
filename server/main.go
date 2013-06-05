@@ -354,12 +354,9 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
-	output, _ := bcrypt.GenerateFromPassword([]byte("hello"), 12)
-	fmt.Fprintf(w, "%+v\n", output)
 	username := r.FormValue("user")
 	password := r.FormValue("pass")
 	fmt.Fprintf(w, "Username: %s\nPassword: %s\n", username, password)
-	fmt.Fprintf(w, "%+v\n", mc)
 	match_t, _ := regexp.MatchString("[a-zA-Z0-9_]{1,15}", username)
 	if match_t != true {
 		fmt.Fprintf(w, "Username is invalid\n")
@@ -374,7 +371,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
 
 	password_valid_t, _ := ioutil.ReadFile(ACCOUNT_DIR + username + "/password")
 	password_valid := bytes.TrimSpace(password_valid_t)
-	fmt.Fprintf(w, "Correct password: %+v\n", password_valid)
 
 	if bcrypt.CompareHashAndPassword(password_valid, []byte(password)) != nil {
 		fmt.Fprintf(w, "Invalid password\n")
@@ -386,8 +382,38 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
 }
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
-	fmt.Fprint(w, "42")
-	fmt.Fprintf(w, "%+v\n", mc)
+	username_t := r.FormValue("user")
+	password_t := r.FormValue("pass")
+	fmt.Fprintf(w, "Username: %s\nPassword: %s\n", username_t, password_t)
+	match_t, _ := regexp.MatchString("[a-zA-Z0-9_]{1,15}", username_t)
+	if match_t != true {
+		fmt.Fprintf(w, "Username is invalid\n")
+		return
+	}
+
+	username := username_t
+
+	exists_t, _ := Exists(ACCOUNT_DIR + username)
+	if exists_t != false {
+		fmt.Fprintf(w, "Account already exists!\n")
+		return
+	}
+
+	password, _ := bcrypt.GenerateFromPassword([]byte(password_t), 12)
+    os.Mkdir(ACCOUNT_DIR+username, os.ModeDir)
+    WriteFileSafe(ACCOUNT_DIR+username+"/username", []byte(username))
+    WriteFileSafe(ACCOUNT_DIR+username+"/banned", []byte("0"))
+    WriteFileSafe(ACCOUNT_DIR+username+"/password", password)
+    WriteFileSafe(ACCOUNT_DIR+username+"/state", []byte("0"))
+    WriteFileSafe(ACCOUNT_DIR+username+"/avatar", []byte("avatar"))
+    WriteFileSafe(ACCOUNT_DIR+username+"/views", []byte("0"))
+    WriteFileSafe(ACCOUNT_DIR+username+"/userid", []byte("0"))
+    WriteFileSafe(ACCOUNT_DIR+username+"/created", []byte(strconv.FormatInt(time.Now().Unix(), 10)))
+    WriteEmptyFile(ACCOUNT_DIR+username+"/comments")
+    WriteEmptyFile(ACCOUNT_DIR+username+"/list")
+
+	session, _ := Login(username, mc)
+	fmt.Fprintf(w, "Session: %+v\n", session)
 }
 
 func BlitzHandler(w http.ResponseWriter, r *http.Request) {
