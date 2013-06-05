@@ -77,7 +77,7 @@ func RateLimit(ip string) bool {
 	return false
 }
 
-func Login(u string, mc *memcache.Client) (map[string]string, error) {
+func Login(u string, mc *memcache.Client) (map[string]string, string, error) {
 	session := make(map[string]string)
 	var contents_t []byte
 	var err error
@@ -86,14 +86,17 @@ func Login(u string, mc *memcache.Client) (map[string]string, error) {
 		contents_t, err = ioutil.ReadFile(ACCOUNT_DIR + u + "/" + session_elements_t[k])
 		if err != nil {
 			fmt.Printf("%s\n", err)
-			return nil, err
+			return nil, "", err
 		}
 		session[session_elements_t[k]] = string(bytes.TrimSpace(contents_t))
 	}
 	session["logged_in"] = "1"
 	session["last_activity"] = "now"
 	session["user"] = u
-	return session, nil
+	key_t := UniqueID(100, false)
+	item_t := memcache.Item{Key: key_t, Value: []byte("hello"), Expiration: 0}
+	mc.Set(&item_t)
+	return session, key_t, nil
 }
 
 func Exists(path string) (bool, error) {
@@ -107,12 +110,12 @@ func Exists(path string) (bool, error) {
 	return false, err
 }
 
-func UniqueID(todo int) string {
-	exists := true
-	ret_t := ""
-	for exists {
+func UniqueID(todo int, exists bool) string {
+	ret_t := strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
+	exists_t := exists
+	for exists_t {
 		ret_t = strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
-		exists, _ = Exists(UPLOAD_DIR + ret_t)
+		exists_t, _ = Exists(UPLOAD_DIR + ret_t)
 	}
 	return ret_t
 }
@@ -179,12 +182,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				md5_t := md5.New()
 				md5_t.Write(buffer_t)
 				hash_t := hex.EncodeToString(md5_t.Sum(nil))
-				delete_id = UniqueID(30)
+				delete_id = UniqueID(30, false)
 				exists_t, _ := Exists(HASH_DIR + hash_t + "/")
 				if exists_t {
 					final_id = GetHash(hash_t)
 				} else {
-					final_id = UniqueID(8)
+					final_id = UniqueID(8, true)
 					os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
 					if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), buffer_t) == false {
 						fmt.Fprintf(w, MakeResult(r, "error", ""))
@@ -219,12 +222,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		md5_t := md5.New()
 		md5_t.Write(final_dat)
 		hash_t := hex.EncodeToString(md5_t.Sum(nil))
-		delete_id = UniqueID(30)
+		delete_id = UniqueID(30, false)
 		exists_t, _ := Exists(HASH_DIR + hash_t + "/")
 		if exists_t {
 			final_id = GetHash(hash_t)
 		} else {
-			final_id = UniqueID(8)
+			final_id = UniqueID(8, true)
 			os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
 			if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), final_dat) == false {
 				fmt.Fprintf(w, MakeResult(r, "error", ""))
@@ -353,19 +356,26 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func LogoutHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
+	cookie_t, _ := r.Cookie("wfsession")
+	mc.Delete(cookie_t.Value)
+	cookie := http.Cookie{Name: "wfsession", Value: "", Path: "/", Domain: "watfile.com", Expires: time.Now().Add(-5 * time.Minute), Secure: false, HttpOnly: true}
+	http.SetCookie(w, &cookie)
+	http.Redirect(w, r, "http://watfile.com", 302)
+}
+
 func LoginHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
 	username := r.FormValue("user")
 	password := r.FormValue("pass")
-	fmt.Fprintf(w, "Username: %s\nPassword: %s\n", username, password)
 	match_t, _ := regexp.MatchString("[a-zA-Z0-9_]{1,15}", username)
 	if match_t != true {
-		fmt.Fprintf(w, "Username is invalid\n")
+		//fmt.Fprintf(w, "Username is invalid\n")
 		return
 	}
 
 	exists_t, _ := Exists(ACCOUNT_DIR + username)
 	if exists_t != true {
-		fmt.Fprintf(w, "No such account\n")
+		//fmt.Fprintf(w, "No such account\n")
 		return
 	}
 
@@ -373,12 +383,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
 	password_valid := bytes.TrimSpace(password_valid_t)
 
 	if bcrypt.CompareHashAndPassword(password_valid, []byte(password)) != nil {
-		fmt.Fprintf(w, "Invalid password\n")
+		//fmt.Fprintf(w, "Invalid password\n")
 		return
 	}
-	fmt.Fprintf(w, "Valid password\n")
-	session, _ := Login(username, mc)
-	fmt.Fprintf(w, "Session: %+v\n", session)
+	session, sessid, _ := Login(username, mc)
+	ret, _ := mc.Get(sessid)
+	cookie := http.Cookie{Name: "wfsession", Value: sessid, Path: "/", Domain: "watfile.com", Expires: time.Now().Add(5 * time.Minute), Secure: false, HttpOnly: true}
+	http.SetCookie(w, &cookie)
+	fmt.Fprintf(w, "Session (%s | %+v): %+v\n", sessid, ret, session)
 }
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
@@ -400,20 +412,20 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client
 	}
 
 	password, _ := bcrypt.GenerateFromPassword([]byte(password_t), 12)
-    os.Mkdir(ACCOUNT_DIR+username, os.ModeDir)
-    WriteFileSafe(ACCOUNT_DIR+username+"/username", []byte(username))
-    WriteFileSafe(ACCOUNT_DIR+username+"/banned", []byte{48})
-    WriteFileSafe(ACCOUNT_DIR+username+"/password", password)
-    WriteFileSafe(ACCOUNT_DIR+username+"/state", []byte{48})
-    WriteFileSafe(ACCOUNT_DIR+username+"/avatar", []byte("avatar"))
-    WriteFileSafe(ACCOUNT_DIR+username+"/views", []byte{48})
-    WriteFileSafe(ACCOUNT_DIR+username+"/userid", []byte(UniqueID(10)))
-    WriteFileSafe(ACCOUNT_DIR+username+"/created", []byte(strconv.FormatInt(time.Now().Unix(), 10)))
-    WriteEmptyFile(ACCOUNT_DIR+username+"/comments")
-    WriteEmptyFile(ACCOUNT_DIR+username+"/list")
+	os.Mkdir(ACCOUNT_DIR+username, os.ModeDir)
+	WriteFileSafe(ACCOUNT_DIR+username+"/username", []byte(username))
+	WriteFileSafe(ACCOUNT_DIR+username+"/banned", []byte{48})
+	WriteFileSafe(ACCOUNT_DIR+username+"/password", password)
+	WriteFileSafe(ACCOUNT_DIR+username+"/state", []byte{48})
+	WriteFileSafe(ACCOUNT_DIR+username+"/avatar", []byte("avatar"))
+	WriteFileSafe(ACCOUNT_DIR+username+"/views", []byte{48})
+	WriteFileSafe(ACCOUNT_DIR+username+"/userid", []byte(UniqueID(10, false)))
+	WriteFileSafe(ACCOUNT_DIR+username+"/created", []byte(strconv.FormatInt(time.Now().Unix(), 10)))
+	WriteEmptyFile(ACCOUNT_DIR + username + "/comments")
+	WriteEmptyFile(ACCOUNT_DIR + username + "/list")
 
-	session, _ := Login(username, mc)
-	fmt.Fprintf(w, "Session: %+v\n", session)
+	session, sessid, _ := Login(username, mc)
+	fmt.Fprintf(w, "Session (%s): %+v\n", sessid, session)
 }
 
 func BlitzHandler(w http.ResponseWriter, r *http.Request) {
@@ -423,22 +435,31 @@ func BlitzHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	rand.Seed(time.Now().UTC().UnixNano())
-	mc := memcache.New("10.0.0.1:11211")
+	mc := memcache.New("127.0.0.1:11211")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "/var/www/watfile/index.html")
 	})
+
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 		UploadHandler(w, r)
 	})
+
 	http.HandleFunc("/dl", func(w http.ResponseWriter, r *http.Request) {
 		DownloadHandler(w, r)
 	})
+
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		LoginHandler(w, r, mc)
 	})
+
+	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		LogoutHandler(w, r, mc)
+	})
+
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		RegisterHandler(w, r, mc)
 	})
+
 	http.HandleFunc("/mu-3f8488db-7fabdac2-b1583628-30caf91d", BlitzHandler)
 	log.Fatal(http.ListenAndServe(CONF_IP, nil))
 }
