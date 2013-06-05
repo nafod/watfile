@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"code.google.com/p/go.crypto/bcrypt"
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/bradfitz/gomemcache/memcache"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -72,6 +75,25 @@ func RateLimit(ip string) bool {
 	}
 	WriteFileSafe(DATA_DIR+"/ratelimit/"+hash_t, []byte{1})
 	return false
+}
+
+func Login(u string, mc *memcache.Client) (map[string]string, error) {
+	session := make(map[string]string)
+	var contents_t []byte
+	var err error
+	session_elements_t := []string{"userid", "banned", "state", "avatar", "created"}
+	for k := range session_elements_t {
+		contents_t, err = ioutil.ReadFile(ACCOUNT_DIR + u + "/" + session_elements_t[k])
+		if err != nil {
+			fmt.Printf("%s\n", err)
+			return nil, err
+		}
+		session[session_elements_t[k]] = string(bytes.TrimSpace(contents_t))
+	}
+	session["logged_in"] = "1"
+	session["last_activity"] = "now"
+	session["user"] = u
+	return session, nil
 }
 
 func Exists(path string) (bool, error) {
@@ -331,6 +353,43 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func LoginHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
+	output, _ := bcrypt.GenerateFromPassword([]byte("hello"), 12)
+	fmt.Fprintf(w, "%+v\n", output)
+	username := r.FormValue("user")
+	password := r.FormValue("pass")
+	fmt.Fprintf(w, "Username: %s\nPassword: %s\n", username, password)
+	fmt.Fprintf(w, "%+v\n", mc)
+	match_t, _ := regexp.MatchString("[a-zA-Z0-9_]{1,15}", username)
+	if match_t != true {
+		fmt.Fprintf(w, "Username is invalid\n")
+		return
+	}
+
+	exists_t, _ := Exists(ACCOUNT_DIR + username)
+	if exists_t != true {
+		fmt.Fprintf(w, "No such account\n")
+		return
+	}
+
+	password_valid_t, _ := ioutil.ReadFile(ACCOUNT_DIR + username + "/password")
+	password_valid := bytes.TrimSpace(password_valid_t)
+	fmt.Fprintf(w, "Correct password: %+v\n", password_valid)
+
+	if bcrypt.CompareHashAndPassword(password_valid, []byte(password)) != nil {
+		fmt.Fprintf(w, "Invalid password\n")
+		return
+	}
+	fmt.Fprintf(w, "Valid password\n")
+	session, _ := Login(username, mc)
+	fmt.Fprintf(w, "Session: %+v\n", session)
+}
+
+func RegisterHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
+	fmt.Fprint(w, "42")
+	fmt.Fprintf(w, "%+v\n", mc)
+}
+
 func BlitzHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "42")
 }
@@ -338,6 +397,7 @@ func BlitzHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	rand.Seed(time.Now().UTC().UnixNano())
+	mc := memcache.New("10.0.0.1:11211")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "/var/www/watfile/index.html")
 	})
@@ -346,6 +406,12 @@ func main() {
 	})
 	http.HandleFunc("/dl", func(w http.ResponseWriter, r *http.Request) {
 		DownloadHandler(w, r)
+	})
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		LoginHandler(w, r, mc)
+	})
+	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+		RegisterHandler(w, r, mc)
 	})
 	http.HandleFunc("/mu-3f8488db-7fabdac2-b1583628-30caf91d", BlitzHandler)
 	log.Fatal(http.ListenAndServe(CONF_IP, nil))
