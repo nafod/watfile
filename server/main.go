@@ -185,7 +185,23 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				delete_id = UniqueID(30, false)
 				exists_t, _ := Exists(HASH_DIR + hash_t + "/")
 				if exists_t {
-					final_id = GetHash(hash_t)
+					old_id := GetHash(hash_t)
+					final_id = UniqueID(8, true)
+					os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
+
+                    files_t, _ := ioutil.ReadDir(UPLOAD_DIR + old_id + "/")
+
+                    filename := ""
+                    for a := range files_t {
+                        if files_t[a].Name() != "." && files_t[a].Name() != ".." {
+                            filename = files_t[a].Name()
+                            break
+                        }
+                    }
+
+                    fmt.Println(os.Symlink(UPLOAD_DIR+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))))
+					os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
+					WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 				} else {
 					final_id = UniqueID(8, true)
 					os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
@@ -225,7 +241,27 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		delete_id = UniqueID(30, false)
 		exists_t, _ := Exists(HASH_DIR + hash_t + "/")
 		if exists_t {
-			final_id = GetHash(hash_t)
+            old_id := GetHash(hash_t)
+            files_t, _ := ioutil.ReadDir(UPLOAD_DIR + old_id + "/")
+
+            filename := ""
+            for a := range files_t {
+                if files_t[a].Name() != "." && files_t[a].Name() != ".." {
+                    filename = files_t[a].Name()
+                    break
+                }
+            }
+
+            filename_new := base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))
+            if filename_new != filename {
+                final_id = UniqueID(8, true)
+                os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
+                fmt.Println(os.Symlink(UPLOAD_DIR+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))))
+                os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
+                WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
+            } else {
+                final_id = old_id
+            }
 		} else {
 			final_id = UniqueID(8, true)
 			os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
