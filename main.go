@@ -24,8 +24,15 @@ import (
 )
 
 const (
+	
+	/* Format "IP:Port number" */
 	CONF_IP     = ":31114"
-	DATA_DIR    = "/var/www/data-watfile"
+
+	/* Used for redirects */
+	CONF_DOMAIN = "http://localhost:31114"
+
+	/* Base watfile data directories */
+	DATA_DIR    = "./data-watfile"
 	UPLOAD_DIR  = DATA_DIR + "/uploads/"
 	HASH_DIR    = DATA_DIR + "/hashes/"
 	ACCOUNT_DIR = DATA_DIR + "/accounts/"
@@ -468,10 +475,47 @@ func BlitzHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "42")
 }
 
+/* Check for existence of data directories */
+func Init() {
+	exists, _ := Exists(DATA_DIR)
+	if exists == false {
+		os.Mkdir(DATA_DIR, os.ModeDir)
+		log.Printf("[LOG] Initializing data directory")
+	}
+	exists, _ = Exists(UPLOAD_DIR)
+	if exists == false {
+		os.Mkdir(UPLOAD_DIR, os.ModeDir)
+		log.Printf("[LOG] Initializing upload directory")
+	}
+	exists, _ = Exists(HASH_DIR)
+	if exists == false {
+		os.Mkdir(HASH_DIR, os.ModeDir)
+		log.Printf("[LOG] Initializing file hash directory")
+	}
+	exists, _ = Exists(ACCOUNT_DIR)
+	if exists == false {
+		os.Mkdir(ACCOUNT_DIR, os.ModeDir)
+		log.Printf("[LOG] Initializing user account directory")
+	}
+	exists, _ = Exists(DELETE_DIR)
+	if exists == false {
+		os.Mkdir(DELETE_DIR, os.ModeDir)
+		log.Printf("[LOG] Initializing file delete metadata directory")
+	}
+	exists, _ = Exists(FORCEDL_DIR)
+	if exists == false {
+		os.Mkdir(FORCEDL_DIR, os.ModeDir)
+		log.Printf("[LOG] Initializing force download metadata directory")
+	}
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	rand.Seed(time.Now().UTC().UnixNano())
 	//mc := memcache.New("127.0.0.1:11211")
+
+	Init();
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./static/index.html")
 	})
