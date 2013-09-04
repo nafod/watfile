@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"code.google.com/p/go.crypto/bcrypt"
+	//"code.google.com/p/go.crypto/bcrypt"
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/base64"
@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"regexp"
+	//"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -391,7 +391,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[LOG] File %s dowloaded\n", request_id)
 	return
 }
-
+/*
 func LogoutHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
 	cookie_t, _ := r.Cookie("wfsession")
 	mc.Delete(cookie_t.Value)
@@ -463,7 +463,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client
 	session, sessid, _ := Login(username, mc)
 	fmt.Fprintf(w, "Session (%s): %+v\n", sessid, session)
 }
-
+*/
 func BlitzHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "42")
 }
@@ -471,10 +471,12 @@ func BlitzHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	rand.Seed(time.Now().UTC().UnixNano())
-	mc := memcache.New("127.0.0.1:11211")
+	//mc := memcache.New("127.0.0.1:11211")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "/var/www/watfile/index.html")
+		http.ServeFile(w, r, "./static/index.html")
 	})
+
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 		UploadHandler(w, r)
@@ -484,7 +486,7 @@ func main() {
 		DownloadHandler(w, r)
 	})
 
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	/*http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		LoginHandler(w, r, mc)
 	})
 
@@ -494,7 +496,7 @@ func main() {
 
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		RegisterHandler(w, r, mc)
-	})
+	})*/
 
 	http.HandleFunc("/mu-3f8488db-7fabdac2-b1583628-30caf91d", BlitzHandler)
 	log.Fatal(http.ListenAndServe(CONF_IP, nil))
