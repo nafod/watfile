@@ -6,19 +6,21 @@ function htmlEscape(str) {
 
 function onComplete(dat, f, d, uid)
 {
-    var dsp = dat.split("|");
-    if(Number(dsp[0]) === Number(uid) && dsp.length === 3)
-    {
-        var data = dsp[2];
-        if(data == "error") {
-            d.innerHTML = "<div id=\"error\">Error uploading file! ( "+htmlEscape(f.name)+" )</div>";
-        } else if (data == "size") {
-            d.innerHTML = "<div id=\"error\">File is too big! ( "+htmlEscape(f.name)+" )</div>";
-        } else if (data == "rate") {
-            d.innerHTML = "<div id=\"error\">Only 6 files per minute! ( "+htmlEscape(f.name)+" )</div>";
-        } else {
+    console.log(dat);
+    var dsp = JSON.parse(dat);
+
+    if(Number(dsp.uid) === Number(uid)) {
+        if (!dsp.err) {
             var ext = htmlEscape(f.name.split('.').pop().toLowerCase());
-            d.innerHTML = "<a href=\"http://s.watfile.com/"+data+'.'+ext+"\" class=\"uploaded\">http://s.watfile.com/"+data+'.'+ext+"</a> ( "+htmlEscape(f.name)+" )";
+            d.innerHTML = "<a href=\"http://s.watfile.com/"+dsp.file+'.'+ext+"\" class=\"uploaded\">http://s.watfile.com/"+dsp.file+'.'+ext+"</a> ( "+htmlEscape(f.name)+" )";
+        } else {
+            if (dsp.err == "error") {
+                d.innerHTML = "<div id=\"error\">Error uploading file! ( "+htmlEscape(f.name)+" )</div>";
+            } else if (dsp.err == "size") {
+                d.innerHTML = "<div id=\"error\">File is too big! ( "+htmlEscape(f.name)+" )</div>";
+            } else if (dsp.err == "rate") {
+                d.innerHTML = "<div id=\"error\">Only 6 files per minute! ( "+htmlEscape(f.name)+" )</div>";
+            }
         }
         d.innerHTML = "<li>"+d.innerHTML+"</li>";
         document.getElementsByTagName("ul")[0].appendChild(d);

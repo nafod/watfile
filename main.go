@@ -131,9 +131,15 @@ func UniqueID(todo int, exists bool) string {
 
 func MakeResult(req *http.Request, t string, del string) string {
 	if val, ok := req.Header["Up-Id"]; ok {
-		return string(val[0]) + "|" + del + "|" + t
+		if del != "" {
+			return fmt.Sprintf(`{"uid": %s, "file": "%s", "del": "%s"}`, val[0], t, del)
+		}
+		return fmt.Sprintf(`{"uid": %s, "err": "%s"`, val[0], t)
 	}
-	return "0|" + del + "|" + t
+	if del != "" {
+		return fmt.Sprintf(`{"uid": %s, "file": "%s", "del": "%s"}`, 0, t, del)
+	}
+	return fmt.Sprintf(`{"uid": %s, "err": "%s"`, 0, t)
 }
 
 func WriteFileSafe(path string, content []byte) bool {
