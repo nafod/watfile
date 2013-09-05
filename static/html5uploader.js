@@ -48,7 +48,7 @@ function upload(file, xhr) {
         this.loadEnd = function() {
             var upid = String(Math.floor(Math.random()*1000000000));
             
-            // Firefox 3.6 provides a feature sendAsBinary ()
+            /* Some browsers require sendAsBinary */
             if(xhr.sendAsBinary != null) {
                 var boundary = 'xxxxxxxxx';
                 var body = '--' + boundary + "\r\n";  
@@ -66,8 +66,8 @@ function upload(file, xhr) {
                 xhr.onreadystatechange = function() { if (xhr.readyState == 4 && xhr.status == 200) { onComplete(xhr.responseText, file, dOutput, upid); }; };
                 xhr.upload.addEventListener('progress', loadProgress, false);
                 xhr.sendAsBinary(body); 
-            // Chrome 7 sends data but you must use the base64_decode on the PHP side
-            } else { 
+            } else {
+                /* Most can use the normal method */
                 xhr.open('POST', 'upload?base64=true', true);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.setRequestHeader('UP-FILENAME', file.name);
