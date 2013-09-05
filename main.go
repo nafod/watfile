@@ -241,7 +241,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, MakeResult(r, "error", ""))
 			return
 		}
-	} else if r.FormValue("up") == "true" {
+	} else {
 		p := new(bytes.Buffer)
 		p.ReadFrom(r.Body)
 		final_dat := p.Bytes()
@@ -294,9 +294,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
 			WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 		}
-
-	} else {
-		fmt.Fprintf(w, MakeResult(r, "error", ""))
 	}
 	log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
 	fmt.Fprintf(w, MakeResult(r, final_id, delete_id))
@@ -411,6 +408,50 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[LOG] File %s dowloaded\n", request_id)
 	return
 }
+
+func APIDownloadHandler(w http.ResponseWriter, r *http.Request) {
+
+	//request_id
+	//request_command (info, delete)
+	request_id := ""
+
+	/* Security checks */
+	if len(request_id) == 0 {
+		fmt.Fprintf(w, "invalid file")
+		return
+	}
+
+	exists, _ := Exists(UPLOAD_DIR + request_id + "/")
+	if exists == false {
+		fmt.Fprintf(w, "no such file")
+		return
+	}
+
+	files_t, _ := ioutil.ReadDir(UPLOAD_DIR + request_id + "/")
+
+	filename := ""
+	for a := range files_t {
+		if files_t[a].Name() != "." && files_t[a].Name() != ".." {
+			filename = files_t[a].Name()
+			break
+		}
+	}
+
+	if len(filename) == 0 {
+		fmt.Fprintf(w, "invalid filename")
+		return
+	}
+
+	/* Original filename */
+	//base64_t, _ := base64.StdEncoding.DecodeString(filename)
+
+	w.Header().Set("Expires", "Sun, 17 Jan 2038 19:14:07 GMT")
+	w.Header().Set("Cache-Control", "max-age=31536000, must-revalidate")
+	http.ServeFile(w, r, UPLOAD_DIR+request_id+"/"+filename)
+	log.Printf("[LOG] File %s dowloaded via API\n", request_id)
+	return
+}
+
 /*
 func LogoutHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
 	cookie_t, _ := r.Cookie("wfsession")
@@ -541,6 +582,15 @@ func main() {
 
 	http.HandleFunc("/dl", func(w http.ResponseWriter, r *http.Request) {
 		DownloadHandler(w, r)
+	})
+
+	/* API paths */
+	//http.HandleFunc("/api/v1/upload", func(w http.ResponseWriter, r *http.Request) {
+	//	APIUploadHandler(w, r)
+	//})
+
+	http.HandleFunc("/api/v1/dl", func(w http.ResponseWriter, r *http.Request) {
+		APIDownloadHandler(w, r)
 	})
 
 	/*http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {

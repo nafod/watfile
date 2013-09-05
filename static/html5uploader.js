@@ -6,7 +6,6 @@ function htmlEscape(str) {
 
 function onComplete(dat, f, d, uid)
 {
-    console.log(dat);
     var dsp = JSON.parse(dat);
 
     if(Number(dsp.uid) === Number(uid)) {
@@ -57,7 +56,7 @@ function upload(file, xhr) {
                 body += "Content-Type: application/octet-stream\r\n\r\n";  
                 body += reader.result + "\r\n";
                 body += '--' + boundary + '--';      
-                xhr.open('POST', 'upload?up=true', true);
+                xhr.open('POST', 'upload', true);
                 xhr.setRequestHeader('Content-Type', 'multipart/form-data; boundary=' + boundary);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.setRequestHeader('UP-FILENAME', file.name);
@@ -69,7 +68,7 @@ function upload(file, xhr) {
                 xhr.sendAsBinary(body); 
             // Chrome 7 sends data but you must use the base64_decode on the PHP side
             } else { 
-                xhr.open('POST', 'upload?up=true&base64=true', true);
+                xhr.open('POST', 'upload?base64=true', true);
                 xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
                 xhr.setRequestHeader('UP-FILENAME', file.name);
                 xhr.setRequestHeader('UP-SIZE', file.size);
@@ -127,7 +126,7 @@ function upload(file, xhr) {
         var upid = Math.floor(Math.random()*1000000000);
         dOutput.innerHTML = "<li>Uploading... ( "+htmlEscape(file.name)+" )</li>"; 
         xhr = new XMLHttpRequest();
-        xhr.open('POST', 'upload?up=true', true);
+        xhr.open('POST', 'upload', true);
         xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
         xhr.setRequestHeader('UP-FILENAME', file.name);
         xhr.setRequestHeader('UP-SIZE', file.size);
