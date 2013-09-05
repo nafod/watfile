@@ -183,7 +183,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			files_t := r.MultipartForm.File["upload"]
 			for _, file_t := range files_t {
-				buffer_t := make([]byte, 10<<20+1)
+				buffer_t := make([]byte, CONF_MAX_FILESIZE + 1)
 				f, err := file_t.Open()
 				defer f.Close()
 
@@ -413,7 +413,9 @@ func APIDownloadHandler(w http.ResponseWriter, r *http.Request) {
 
 	//request_id
 	//request_command (info, delete)
-	request_id := ""
+	r.ParseForm()
+	log.Printf("Form values: %+v\n", r.Form)
+	request_id := r.Form.Get("file")
 
 	/* Security checks */
 	if len(request_id) == 0 {
@@ -443,8 +445,9 @@ func APIDownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/* Original filename */
-	//base64_t, _ := base64.StdEncoding.DecodeString(filename)
-
+	base64_t, _ := base64.StdEncoding.DecodeString(filename)
+	
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+string(base64_t)+"\"")
 	w.Header().Set("Expires", "Sun, 17 Jan 2038 19:14:07 GMT")
 	w.Header().Set("Cache-Control", "max-age=31536000, must-revalidate")
 	http.ServeFile(w, r, UPLOAD_DIR+request_id+"/"+filename)
