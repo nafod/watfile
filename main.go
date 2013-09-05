@@ -29,7 +29,9 @@ const (
 	CONF_IP     = ":31114"
 
 	/* Used for redirects */
-	CONF_DOMAIN = "http://localhost:31114"
+	CONF_DOMAIN = "http://localhost:31114/"
+
+	CONF_MAX_FILESIZE = 10 << 20
 
 	/* Base watfile data directories */
 	DATA_DIR    = "./data-watfile"
@@ -157,11 +159,16 @@ func GetHash(hash string) string {
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	delete_id := ""
 	final_id := ""
-	if RateLimit(r.Header["X-Real-Ip"][0]) {
+	real_ip_t := r.Header.Get("X-Real-Ip")
+	if real_ip_t == "" {
+		real_ip_t = r.RemoteAddr
+	}
+
+	if RateLimit(real_ip_t) {
 		fmt.Fprintf(w, MakeResult(r, "rate", ""))
 		return
 	}
-	r.ParseMultipartForm(10 << 20) // 10MB
+	r.ParseMultipartForm(CONF_MAX_FILESIZE) // 10MB
 	if r.MultipartForm != nil {
 		if _, ok := r.MultipartForm.File["upload"]; ok {
 			if len(r.MultipartForm.File["upload"]) == 0 {
@@ -179,7 +186,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					fmt.Fprintf(w, MakeResult(r, "error", ""))
 					return
 				}
-				if size_t > 10485761 {
+				if size_t > CONF_MAX_FILESIZE + 1 {
 					fmt.Fprintf(w, MakeResult(r, "size", ""))
 					return
 				}
@@ -237,7 +244,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			final_dat = []byte(base64_t)
 		}
 
-		if len(final_dat) > 10485761 {
+		if len(final_dat) > CONF_MAX_FILESIZE + 1 {
 			fmt.Fprintf(w, MakeResult(r, "error", ""))
 			return
 		}
@@ -296,20 +303,20 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	/* Security checks */
 	request_id_t := strings.TrimSpace(r.FormValue("id"))
 	if len(request_id_t) == 0 {
-		http.Redirect(w, r, "http://watfile.com/", 303)
+		http.Redirect(w, r, CONF_DOMAIN, 303)
 		return
 	}
 
 	request_commands := strings.Split(request_id_t, "/")
 	request_id := strings.Split(request_commands[0], ".")[0]
 	if len(request_id) == 0 {
-		http.Redirect(w, r, "http://watfile.com/", 303)
+		http.Redirect(w, r, CONF_DOMAIN, 303)
 		return
 	}
 
 	exists, _ := Exists(UPLOAD_DIR + request_id + "/")
 	if exists == false {
-		http.Redirect(w, r, "http://watfile.com/", 303)
+		http.Redirect(w, r, CONF_DOMAIN, 303)
 		return
 	}
 
@@ -324,7 +331,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(filename) == 0 {
-		http.Redirect(w, r, "http://watfile.com/", 303)
+		http.Redirect(w, r, CONF_DOMAIN, 303)
 		return
 	}
 
@@ -372,7 +379,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 				os.RemoveAll(HASH_DIR + md5_s)
 				os.RemoveAll(UPLOAD_DIR + request_id)
 			}
-			http.Redirect(w, r, "http://watfile.com/", 303)
+			http.Redirect(w, r, CONF_DOMAIN, 303)
 			return
 		}
 	}
