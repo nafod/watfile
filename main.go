@@ -1,25 +1,17 @@
 package main
 
 import (
-	"bytes"
+	//"bytes"
 	//"code.google.com/p/go.crypto/bcrypt"
 	"crypto/md5"
-	"crypto/sha1"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"github.com/bradfitz/gomemcache/memcache"
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
-	"os/exec"
 	//"regexp"
-	"runtime"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -41,26 +33,6 @@ const (
 	DELETE_DIR  = DATA_DIR + "/delete/"
 	FORCEDL_DIR = DATA_DIR + "/forcedl/"
 )
-
-func StringInArray(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
-func FormatSize(size int64) string {
-	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
-	id := 0
-	size_t := size
-	for id < len(units) && size_t > 1024 {
-		size_t = size_t / 1024
-		id = id + 1
-	}
-	return fmt.Sprintf("%d %s", size_t, units[id])
-}
 
 func RateLimit(ip string) bool {
 	md5_t := md5.New()
@@ -86,7 +58,7 @@ func RateLimit(ip string) bool {
 	return false
 }
 
-func Login(u string, mc *memcache.Client) (map[string]string, string, error) {
+/*func Login(u string, mc *memcache.Client) (map[string]string, string, error) {
 	session := make(map[string]string)
 	var contents_t []byte
 	var err error
@@ -106,28 +78,7 @@ func Login(u string, mc *memcache.Client) (map[string]string, string, error) {
 	item_t := memcache.Item{Key: key_t, Value: []byte("hello"), Expiration: 0}
 	mc.Set(&item_t)
 	return session, key_t, nil
-}
-
-func Exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
-
-func UniqueID(todo int, exists bool) string {
-	ret_t := strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
-	exists_t := exists
-	for exists_t {
-		ret_t = strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
-		exists_t, _ = Exists(UPLOAD_DIR + ret_t)
-	}
-	return ret_t
-}
+}*/
 
 func MakeResult(req *http.Request, t string, del string) string {
 	if val, ok := req.Header["Up-Id"]; ok {
@@ -162,298 +113,6 @@ func GetHash(hash string) string {
 	return ""
 }
 
-func UploadHandler(w http.ResponseWriter, r *http.Request) {
-	delete_id := ""
-	final_id := ""
-	real_ip_t := r.Header.Get("X-Real-Ip")
-	if real_ip_t == "" {
-		real_ip_t = r.RemoteAddr
-	}
-
-	if RateLimit(real_ip_t) {
-		fmt.Fprintf(w, MakeResult(r, "rate", ""))
-		return
-	}
-	r.ParseMultipartForm(CONF_MAX_FILESIZE) // 10MB
-	if r.MultipartForm != nil {
-		if _, ok := r.MultipartForm.File["upload"]; ok {
-			if len(r.MultipartForm.File["upload"]) == 0 {
-				fmt.Fprintf(w, MakeResult(r, "error", ""))
-				return
-			}
-			files_t := r.MultipartForm.File["upload"]
-			for _, file_t := range files_t {
-				buffer_t := make([]byte, CONF_MAX_FILESIZE + 1)
-				f, err := file_t.Open()
-				defer f.Close()
-
-				size_t, err := f.Read(buffer_t)
-				if err != nil {
-					fmt.Fprintf(w, MakeResult(r, "error", ""))
-					return
-				}
-				if size_t > CONF_MAX_FILESIZE + 1 {
-					fmt.Fprintf(w, MakeResult(r, "size", ""))
-					return
-				}
-
-				buffer_t = buffer_t[:size_t]
-
-				md5_t := md5.New()
-				md5_t.Write(buffer_t)
-				hash_t := hex.EncodeToString(md5_t.Sum(nil))
-				delete_id = UniqueID(30, false)
-				exists_t, _ := Exists(HASH_DIR + hash_t + "/")
-				if exists_t {
-					old_id := GetHash(hash_t)
-					final_id = UniqueID(8, true)
-					os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
-
-                    files_t, _ := ioutil.ReadDir(UPLOAD_DIR + old_id + "/")
-
-                    filename := ""
-                    for a := range files_t {
-                        if files_t[a].Name() != "." && files_t[a].Name() != ".." {
-                            filename = files_t[a].Name()
-                            break
-                        }
-                    }
-
-                    fmt.Println(os.Symlink(UPLOAD_DIR+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))))
-					os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
-					WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
-				} else {
-					final_id = UniqueID(8, true)
-					os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
-					if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), buffer_t) == false {
-						fmt.Fprintf(w, MakeResult(r, "error", ""))
-						return
-					}
-					os.Mkdir(HASH_DIR+hash_t, os.ModeDir)
-					WriteEmptyFile(HASH_DIR + hash_t + "/" + final_id)
-					os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
-					WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
-					/* Check image size and create forcedl here */
-				}
-
-			}
-		} else {
-			fmt.Fprintf(w, MakeResult(r, "error", ""))
-			return
-		}
-	} else {
-		p := new(bytes.Buffer)
-		p.ReadFrom(r.Body)
-		final_dat := p.Bytes()
-		if r.FormValue("base64") == "true" {
-			base64_t, _ := base64.StdEncoding.DecodeString(p.String())
-			final_dat = []byte(base64_t)
-		}
-
-		if len(final_dat) > CONF_MAX_FILESIZE + 1 {
-			fmt.Fprintf(w, MakeResult(r, "error", ""))
-			return
-		}
-
-		md5_t := md5.New()
-		md5_t.Write(final_dat)
-		hash_t := hex.EncodeToString(md5_t.Sum(nil))
-		delete_id = UniqueID(30, false)
-		exists_t, _ := Exists(HASH_DIR + hash_t + "/")
-		if exists_t {
-            old_id := GetHash(hash_t)
-            files_t, _ := ioutil.ReadDir(UPLOAD_DIR + old_id + "/")
-
-            filename := ""
-            for a := range files_t {
-                if files_t[a].Name() != "." && files_t[a].Name() != ".." {
-                    filename = files_t[a].Name()
-                    break
-                }
-            }
-
-            filename_new := base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))
-            if filename_new != filename {
-                final_id = UniqueID(8, true)
-                os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
-                fmt.Println(os.Symlink(UPLOAD_DIR+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))))
-                os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
-                WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
-            } else {
-                final_id = old_id
-            }
-		} else {
-			final_id = UniqueID(8, true)
-			os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
-			if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), final_dat) == false {
-				fmt.Fprintf(w, MakeResult(r, "error", ""))
-				return
-			}
-			os.Mkdir(HASH_DIR+hash_t, os.ModeDir)
-			WriteEmptyFile(HASH_DIR + hash_t + "/" + final_id)
-			os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
-			WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
-		}
-	}
-	log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
-	fmt.Fprintf(w, MakeResult(r, final_id, delete_id))
-}
-
-func DownloadHandler(w http.ResponseWriter, r *http.Request) {
-
-	whitelist := []string{"image/gif", "image/png", "image/jpeg", "image/bmp", "application/pdf", "text/plain"}
-
-	/* Security checks */
-	request_id_t := strings.TrimSpace(r.FormValue("id"))
-	if len(request_id_t) == 0 {
-		http.Redirect(w, r, CONF_DOMAIN, 303)
-		return
-	}
-
-	request_commands := strings.Split(request_id_t, "/")
-	request_id := strings.Split(request_commands[0], ".")[0]
-	if len(request_id) == 0 {
-		http.Redirect(w, r, CONF_DOMAIN, 303)
-		return
-	}
-
-	exists, _ := Exists(UPLOAD_DIR + request_id + "/")
-	if exists == false {
-		http.Redirect(w, r, CONF_DOMAIN, 303)
-		return
-	}
-
-	files_t, _ := ioutil.ReadDir(UPLOAD_DIR + request_id + "/")
-
-	filename := ""
-	for a := range files_t {
-		if files_t[a].Name() != "." && files_t[a].Name() != ".." {
-			filename = files_t[a].Name()
-			break
-		}
-	}
-
-	if len(filename) == 0 {
-		http.Redirect(w, r, CONF_DOMAIN, 303)
-		return
-	}
-
-	fileinfo_t, _ := os.Stat(UPLOAD_DIR + request_id + "/" + filename)
-	out, err := exec.Command("file", "-bi", UPLOAD_DIR+request_id+"/"+filename).Output()
-
-	dlonly := false
-	if len(request_commands) > 1 {
-		if request_commands[1] == "dl" {
-			dlonly = true
-		} else if request_commands[1] == "info" {
-			w.Header().Set("Content-Type", "text/plain")
-			w.Header().Set("Expires", "Sun, 17 Jan 2038 19:14:07 GMT")
-			w.Header().Set("Cache-Control", "max-age=31536000")
-
-			/* Filename */
-			base64_t, _ := base64.StdEncoding.DecodeString(filename)
-			fmt.Fprintf(w, "name: %s\n", base64_t)
-			fmt.Fprintf(w, "mime: %s\n", strings.Split(string(out), ";")[0])
-			fmt.Fprintf(w, "size: %s\n", FormatSize(fileinfo_t.Size()))
-			fmt.Fprintf(w, "uploaded: %s\n", fileinfo_t.ModTime().Format("Mon, 2 Jan 2006 15:04:05 MST"))
-
-			/* File MD5 */
-			filedat_t, _ := ioutil.ReadFile(UPLOAD_DIR + request_id + "/" + filename)
-			md5_t := md5.New()
-			md5_t.Write(filedat_t)
-			fmt.Fprintf(w, "md5: %x\n", md5_t.Sum(nil))
-
-			sha1_t := sha1.New()
-			sha1_t.Write(filedat_t)
-			fmt.Fprintf(w, "sha1: %x\n", sha1_t.Sum(nil))
-			return
-		} else if request_commands[1] == "delete" && len(request_commands[1]) > 0 {
-
-			filedat_t, _ := ioutil.ReadFile(UPLOAD_DIR + request_id + "/" + filename)
-			md5_t := md5.New()
-			md5_t.Write(filedat_t)
-			md5_s := fmt.Sprintf("%x", md5_t.Sum(nil))
-
-			delete_id := request_commands[1]
-			exists, _ = Exists(DELETE_DIR + delete_id + "/" + request_id)
-			if exists {
-				os.RemoveAll(DELETE_DIR + delete_id)
-				os.RemoveAll(FORCEDL_DIR + request_id)
-				os.RemoveAll(HASH_DIR + md5_s)
-				os.RemoveAll(UPLOAD_DIR + request_id)
-			}
-			http.Redirect(w, r, CONF_DOMAIN, 303)
-			return
-		}
-	}
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Content-Description", "File Transfer")
-	w.Header().Set("X-XSS-Protection", "1; mode=block")
-
-	exists, _ = Exists(FORCEDL_DIR + request_id)
-	base64_t, _ := base64.StdEncoding.DecodeString(filename)
-
-	if StringInArray(strings.Split(string(out), ";")[0], whitelist) && !dlonly && !exists && err == nil {
-		w.Header().Set("Content-Disposition", "inline; filename=\""+string(base64_t)+"\"")
-	} else {
-		w.Header().Set("Content-Disposition", "attachment; filename=\""+string(base64_t)+"\"")
-	}
-
-	w.Header().Set("Expires", "Sun, 17 Jan 2038 19:14:07 GMT")
-	w.Header().Set("Cache-Control", "max-age=31536000, must-revalidate")
-	w.Header().Set("Last-Modified", fileinfo_t.ModTime().Format("Mon, 2 Jan 2006 15:04:05 MST"))
-	w.Header().Set("Content-Length", string(fileinfo_t.Size()))
-	//w.Header().Set("X-Accel-Redirect", "/protected/"+request_id+"/"+filename)
-	http.ServeFile(w, r, UPLOAD_DIR+request_id+"/"+filename)
-	log.Printf("[LOG] File %s dowloaded\n", request_id)
-	return
-}
-
-func APIDownloadHandler(w http.ResponseWriter, r *http.Request) {
-
-	//request_id
-	//request_command (info, delete)
-	r.ParseForm()
-	log.Printf("Form values: %+v\n", r.Form)
-	request_id := r.Form.Get("file")
-
-	/* Security checks */
-	if len(request_id) == 0 {
-		fmt.Fprintf(w, "invalid file")
-		return
-	}
-
-	exists, _ := Exists(UPLOAD_DIR + request_id + "/")
-	if exists == false {
-		fmt.Fprintf(w, "no such file")
-		return
-	}
-
-	files_t, _ := ioutil.ReadDir(UPLOAD_DIR + request_id + "/")
-
-	filename := ""
-	for a := range files_t {
-		if files_t[a].Name() != "." && files_t[a].Name() != ".." {
-			filename = files_t[a].Name()
-			break
-		}
-	}
-
-	if len(filename) == 0 {
-		fmt.Fprintf(w, "invalid filename")
-		return
-	}
-
-	/* Original filename */
-	base64_t, _ := base64.StdEncoding.DecodeString(filename)
-	
-	w.Header().Set("Content-Disposition", "attachment; filename=\""+string(base64_t)+"\"")
-	w.Header().Set("Expires", "Sun, 17 Jan 2038 19:14:07 GMT")
-	w.Header().Set("Cache-Control", "max-age=31536000, must-revalidate")
-	http.ServeFile(w, r, UPLOAD_DIR+request_id+"/"+filename)
-	log.Printf("[LOG] File %s dowloaded via API\n", request_id)
-	return
-}
 
 /*
 func LogoutHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client) {
@@ -532,46 +191,10 @@ func BlitzHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "42")
 }
 
-/* Check for existence of data directories */
-func Init() {
-	exists, _ := Exists(DATA_DIR)
-	if exists == false {
-		os.Mkdir(DATA_DIR, os.ModeDir)
-		log.Printf("[LOG] Initializing data directory")
-	}
-	exists, _ = Exists(UPLOAD_DIR)
-	if exists == false {
-		os.Mkdir(UPLOAD_DIR, os.ModeDir)
-		log.Printf("[LOG] Initializing upload directory")
-	}
-	exists, _ = Exists(HASH_DIR)
-	if exists == false {
-		os.Mkdir(HASH_DIR, os.ModeDir)
-		log.Printf("[LOG] Initializing file hash directory")
-	}
-	exists, _ = Exists(ACCOUNT_DIR)
-	if exists == false {
-		os.Mkdir(ACCOUNT_DIR, os.ModeDir)
-		log.Printf("[LOG] Initializing user account directory")
-	}
-	exists, _ = Exists(DELETE_DIR)
-	if exists == false {
-		os.Mkdir(DELETE_DIR, os.ModeDir)
-		log.Printf("[LOG] Initializing file delete metadata directory")
-	}
-	exists, _ = Exists(FORCEDL_DIR)
-	if exists == false {
-		os.Mkdir(FORCEDL_DIR, os.ModeDir)
-		log.Printf("[LOG] Initializing force download metadata directory")
-	}
-}
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
-	rand.Seed(time.Now().UTC().UnixNano())
-	//mc := memcache.New("127.0.0.1:11211")
 
-	Init();
+	Init()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./static/index.html")
