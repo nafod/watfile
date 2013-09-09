@@ -52,8 +52,16 @@ func main() {
 		UploadHandler(w, r)
 	})
 
+	http.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
+		FileHandler(w, r)
+	})
+
 	http.HandleFunc("/dl", func(w http.ResponseWriter, r *http.Request) {
 		DownloadHandler(w, r)
+	})
+
+	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
+		DeleteHandler(w, r)
 	})
 
 	/* API paths */
