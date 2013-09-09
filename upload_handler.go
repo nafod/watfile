@@ -24,7 +24,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, MakeResult(r, "rate", ""))
 		return
 	}
-	r.ParseMultipartForm(CONF_MAX_FILESIZE) // 10MB
+
+	r.ParseMultipartForm(CONF_MAX_FILESIZE)
 	if r.MultipartForm != nil {
 		if _, ok := r.MultipartForm.File["upload"]; ok {
 			if len(r.MultipartForm.File["upload"]) == 0 {
