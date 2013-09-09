@@ -2,10 +2,25 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"net/http"
 	"os"
 	"strconv"
-	"math/rand"
 )
+
+/* TODO: Add support for XML vs JSON replies */
+func MakeResult(req *http.Request, t string, del string) string {
+	if val, ok := req.Header["Up-Id"]; ok {
+		if del != "" {
+			return fmt.Sprintf(`{"uid": %s, "file": "%s", "del": "%s"}`, val[0], t, del)
+		}
+		return fmt.Sprintf(`{"uid": %s, "err": "%s"`, val[0], t)
+	}
+	if del != "" {
+		return fmt.Sprintf(`{"uid": %s, "file": "%s", "del": "%s"}`, 0, t, del)
+	}
+	return fmt.Sprintf(`{"uid": %s, "err": "%s"`, 0, t)
+}
 
 func StringInArray(a string, list []string) bool {
 	for _, b := range list {

@@ -2,11 +2,11 @@ package main
 
 import (
 	"crypto/md5"
-	"io"
 	"encoding/hex"
+	"io"
+	"io/ioutil"
 	"os"
 	"time"
-	"io/ioutil"
 )
 
 func RateLimit(ip string) bool {

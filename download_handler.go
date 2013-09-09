@@ -1,16 +1,16 @@
 package main
 
 import (
-	"net/http"
-	"strings"
-	"io/ioutil"
-	"os/exec"
-	"os"
-	"encoding/base64"
-	"fmt"
 	"crypto/md5"
 	"crypto/sha1"
+	"encoding/base64"
+	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"os"
+	"os/exec"
+	"strings"
 )
 
 func DownloadHandler(w http.ResponseWriter, r *http.Request) {

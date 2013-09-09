@@ -1,11 +1,11 @@
 package main
 
 import (
-	"net/http"
-	"log"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"encoding/base64"
+	"log"
+	"net/http"
 )
 
 func APIDownloadHandler(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +45,7 @@ func APIDownloadHandler(w http.ResponseWriter, r *http.Request) {
 
 	/* Original filename */
 	base64_t, _ := base64.StdEncoding.DecodeString(filename)
-	
+
 	w.Header().Set("Content-Disposition", "attachment; filename=\""+string(base64_t)+"\"")
 	w.Header().Set("Expires", "Sun, 17 Jan 2038 19:14:07 GMT")
 	w.Header().Set("Cache-Control", "max-age=31536000, must-revalidate")

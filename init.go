@@ -1,14 +1,14 @@
 package main
 
 import (
-	"math/rand"
-	"time"
-	"os"
 	"log"
+	"math/rand"
+	"os"
 	"runtime"
+	"time"
 )
 
-/* 
+/*
 	Initial code to set up watfile directories,
 	seed PRNG, and set the number of processes
 */
