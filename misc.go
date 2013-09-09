@@ -22,6 +22,16 @@ func MakeResult(req *http.Request, t string, del string) string {
 	return fmt.Sprintf(`{"uid": %s, "err": "%s"`, 0, t)
 }
 
+func GetIDHash(hash string) string {
+	files_t, _ := ioutil.ReadDir(HASH_DIR + hash + "/")
+	for a := range files_t {
+		if files_t[a].Name() != "." && files_t[a].Name() != ".." {
+			return files_t[a].Name()
+		}
+	}
+	return ""
+}
+
 func StringInArray(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {

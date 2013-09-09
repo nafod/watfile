@@ -37,16 +37,6 @@ func WriteEmptyFile(path string) bool {
 	return true
 }
 
-func GetIDHash(hash string) string {
-	files_t, _ := ioutil.ReadDir(HASH_DIR + hash + "/")
-	for a := range files_t {
-		if files_t[a].Name() != "." && files_t[a].Name() != ".." {
-			return files_t[a].Name()
-		}
-	}
-	return ""
-}
-
 func main() {
 
 	/* Create initial directories, sets GOMAXPROC, and seeds the PRNG */
