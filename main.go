@@ -3,16 +3,12 @@ package main
 import (
 	//"bytes"
 	//"code.google.com/p/go.crypto/bcrypt"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	//"regexp"
-	"time"
 )
 
 const (
@@ -33,30 +29,6 @@ const (
 	DELETE_DIR  = DATA_DIR + "/delete/"
 	FORCEDL_DIR = DATA_DIR + "/forcedl/"
 )
-
-func RateLimit(ip string) bool {
-	md5_t := md5.New()
-	io.WriteString(md5_t, ip)
-	hash_t := hex.EncodeToString(md5_t.Sum(nil))
-	exists, _ := Exists(DATA_DIR + "/ratelimit/" + hash_t)
-	if exists {
-		file_t, _ := os.Open(DATA_DIR + "/ratelimit/" + hash_t)
-		fileinfo_t, _ := file_t.Stat()
-		filemtime := fileinfo_t.ModTime().Unix()
-		defer file_t.Close()
-		if filemtime+300 > time.Now().Unix() {
-			curr_t, _ := ioutil.ReadFile(DATA_DIR + "/ratelimit/" + hash_t)
-			if curr_t[0] == 30 {
-				return true
-			} else {
-				WriteFileSafe(DATA_DIR+"/ratelimit/"+hash_t, []byte{curr_t[0] + 1})
-			}
-			return false
-		}
-	}
-	WriteFileSafe(DATA_DIR+"/ratelimit/"+hash_t, []byte{1})
-	return false
-}
 
 /*func Login(u string, mc *memcache.Client) (map[string]string, string, error) {
 	session := make(map[string]string)
@@ -187,10 +159,6 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request, mc *memcache.Client
 	fmt.Fprintf(w, "Session (%s): %+v\n", sessid, session)
 }
 */
-func BlitzHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "42")
-}
-
 
 func main() {
 
@@ -231,6 +199,9 @@ func main() {
 		RegisterHandler(w, r, mc)
 	})*/
 
-	http.HandleFunc("/mu-3f8488db-7fabdac2-b1583628-30caf91d", BlitzHandler)
+	http.HandleFunc("/mu-3f8488db-7fabdac2-b1583628-30caf91d", func (w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "42")
+	})
+
 	log.Fatal(http.ListenAndServe(CONF_IP, nil))
 }
