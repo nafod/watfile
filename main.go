@@ -14,7 +14,7 @@ const (
 	CONF_IP = ":31114"
 
 	/* Used for redirects */
-	CONF_DOMAIN = "http://localhost:31114/"
+	CONF_DOMAIN = "http://162.243.34.173:31114/"
 
 	CONF_MAX_FILESIZE = 10 << 20
 
@@ -90,4 +90,5 @@ func main() {
 	})
 
 	log.Fatal(http.ListenAndServe(CONF_IP, nil))
+    log.Printf("[LOG] Now listening on %s", CONF_IP)
 }
