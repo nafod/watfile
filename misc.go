@@ -9,7 +9,6 @@ import (
 	"strconv"
 )
 
-/* TODO: Add support for XML vs JSON replies */
 func MakeResult(req *http.Request, t string, del string) string {
 	if val, ok := req.Header["Up-Id"]; ok {
 		if del != "" {

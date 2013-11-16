@@ -14,7 +14,7 @@ import (
 */
 func Init() {
 
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
 	rand.Seed(time.Now().UTC().UnixNano())
 
     perm := os.ModeDir | 0744

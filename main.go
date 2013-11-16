@@ -14,7 +14,7 @@ const (
 	CONF_IP = ":31114"
 
 	/* Used for redirects */
-	CONF_DOMAIN = "http://162.243.34.173:31114/"
+	CONF_DOMAIN = "http://watfile.com/"
 
 	CONF_MAX_FILESIZE = 10 << 20
 
