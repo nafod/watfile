@@ -11,7 +11,7 @@ import (
 const (
 
 	/* Format "IP:Port number" */
-	CONF_IP = ":31114"
+	CONF_IP = "127.0.0.1:31114"
 
 	/* Used for redirects */
 	CONF_DOMAIN = "http://watfile.com/"

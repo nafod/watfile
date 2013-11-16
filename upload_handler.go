@@ -28,6 +28,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseMultipartForm(CONF_MAX_FILESIZE)
+    log.Printf("Received request: %+v\n", r.MultipartForm)
 	if r.MultipartForm != nil {
 		if _, ok := r.MultipartForm.File["upload"]; ok {
 			if len(r.MultipartForm.File["upload"]) == 0 {
