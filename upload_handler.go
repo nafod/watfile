@@ -16,6 +16,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	delete_id := ""
 	final_id := ""
 	real_ip_t := r.Header.Get("X-Real-Ip")
+    perm := os.ModeDir | 0744
+
 	if real_ip_t == "" {
 		real_ip_t = r.RemoteAddr
 	}
@@ -58,7 +60,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				if exists_t {
 					old_id := GetIDHash(hash_t)
 					final_id = UniqueID(8, true)
-					os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
+					os.Mkdir(UPLOAD_DIR+final_id, perm)
 
 					files_t, _ := ioutil.ReadDir(UPLOAD_DIR + old_id + "/")
 
@@ -71,18 +73,18 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					}
 
 					fmt.Println(os.Symlink(UPLOAD_DIR+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))))
-					os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
+					os.Mkdir(DELETE_DIR+delete_id, perm)
 					WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 				} else {
 					final_id = UniqueID(8, true)
-					os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
+					os.Mkdir(UPLOAD_DIR+final_id, perm)
 					if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), buffer_t) == false {
 						fmt.Fprintf(w, MakeResult(r, "error", ""))
 						return
 					}
-					os.Mkdir(HASH_DIR+hash_t, os.ModeDir)
+					os.Mkdir(HASH_DIR+hash_t, perm)
 					WriteEmptyFile(HASH_DIR + hash_t + "/" + final_id)
-					os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
+					os.Mkdir(DELETE_DIR+delete_id, perm)
 					WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 					/* Check image size and create forcedl here */
 				}
@@ -126,23 +128,23 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			filename_new := base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))
 			if filename_new != filename {
 				final_id = UniqueID(8, true)
-				os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
+				os.Mkdir(UPLOAD_DIR+final_id, perm)
 				fmt.Println(os.Symlink(UPLOAD_DIR+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0]))))
-				os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
+				os.Mkdir(DELETE_DIR+delete_id, perm)
 				WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 			} else {
 				final_id = old_id
 			}
 		} else {
 			final_id = UniqueID(8, true)
-			os.Mkdir(UPLOAD_DIR+final_id, os.ModeDir)
+			os.Mkdir(UPLOAD_DIR+final_id, perm)
 			if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(r.Header["Up-Filename"][0])), final_dat) == false {
 				fmt.Fprintf(w, MakeResult(r, "error", ""))
 				return
 			}
-			os.Mkdir(HASH_DIR+hash_t, os.ModeDir)
+			os.Mkdir(HASH_DIR+hash_t, perm)
 			WriteEmptyFile(HASH_DIR + hash_t + "/" + final_id)
-			os.Mkdir(DELETE_DIR+delete_id, os.ModeDir)
+			os.Mkdir(DELETE_DIR+delete_id, perm)
 			WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 		}
 	}
