@@ -23,6 +23,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	final_id := ""
 	real_ip_t := r.Header.Get("X-Real-Ip")
 	perm := os.ModeDir | 0744
+	log.Printf("Received request: %+v\n", r)
 
 	if real_ip_t == "" {
 		real_ip_t = r.RemoteAddr
@@ -34,7 +35,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseMultipartForm(CONF_MAX_FILESIZE)
-	log.Printf("Received request: %+v\n", r.MultipartForm)
     var ret_files []UploadedFile
 	if _, ok := r.MultipartForm.File["upload"]; ok {
 		if len(r.MultipartForm.File["upload"]) == 0 {
@@ -104,7 +104,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
 	//fmt.Fprintf(w, MakeResult(r, final_id, delete_id))
-	json_out, err := json.Marshal(map[string][]UploadedFile{"files": ret_files})
+	json_out, err := json.Marshal(map[string][]UploadedFile{"files": ret_files[1:]})
     if err != nil {
         panic(err)
     }
