@@ -35,14 +35,14 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseMultipartForm(CONF_MAX_FILESIZE)
-    var ret_files []UploadedFile
+	var ret_files []UploadedFile
 	if _, ok := r.MultipartForm.File["upload"]; ok {
 		if len(r.MultipartForm.File["upload"]) == 0 {
 			fmt.Fprintf(w, MakeResult(r, "error", ""))
 			return
 		}
 		files_t := r.MultipartForm.File["upload"]
-        ret_files = make([]UploadedFile, len(r.MultipartForm.File["upload"]))
+		ret_files = make([]UploadedFile, len(r.MultipartForm.File["upload"]))
 		for _, file_t := range files_t {
 			buffer_t := make([]byte, CONF_MAX_FILESIZE+1)
 			f, err := file_t.Open()
@@ -79,15 +79,14 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 				}
-
-				fmt.Println(os.Symlink(UPLOAD_DIR+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(file_t.Filename))))
+                os.Symlink("../"+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(file_t.Filename)))
 				os.Mkdir(DELETE_DIR+delete_id, perm)
 				WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 			} else {
 				final_id = UniqueID(8, true)
 				os.Mkdir(UPLOAD_DIR+final_id, perm)
 				if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(file_t.Filename)), buffer_t) == false {
-                    ret_files = append(ret_files, UploadedFile{"", "", "error"})
+					ret_files = append(ret_files, UploadedFile{"", "", "error"})
 					continue
 				}
 				os.Mkdir(HASH_DIR+hash_t, perm)
@@ -96,7 +95,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 				/* Check image size and create forcedl here */
 			}
-            ret_files = append(ret_files, UploadedFile{file_t.Filename, final_id, ""})
+			ret_files = append(ret_files, UploadedFile{file_t.Filename, final_id, ""})
 		}
 	} else {
 		fmt.Fprintf(w, MakeResult(r, "error", ""))
@@ -105,8 +104,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
 	//fmt.Fprintf(w, MakeResult(r, final_id, delete_id))
 	json_out, err := json.Marshal(map[string][]UploadedFile{"files": ret_files[1:]})
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 	fmt.Fprintf(w, string(json_out))
 }
