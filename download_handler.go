@@ -61,7 +61,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-XSS-Protection", "1; mode=block")
 
 	exists, _ = Exists(FORCEDL_DIR + request_id)
-	base64_t, _ := base64.StdEncoding.DecodeString(filename)
+	base64_t, _ := base64.URLEncoding.DecodeString(filename)
 
 	if StringInArray(strings.Split(string(out), ";")[0], whitelist) && !exists && err == nil {
 		w.Header().Set("Content-Disposition", "inline; filename=\""+string(base64_t)+"\"")

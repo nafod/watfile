@@ -79,13 +79,13 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 				}
-                os.Symlink("../"+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(file_t.Filename)))
+                os.Symlink("../"+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.URLEncoding.EncodeToString([]byte(file_t.Filename)))
 				os.Mkdir(DELETE_DIR+delete_id, perm)
 				WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
 			} else {
 				final_id = UniqueID(8, true)
 				os.Mkdir(UPLOAD_DIR+final_id, perm)
-				if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.StdEncoding.EncodeToString([]byte(file_t.Filename)), buffer_t) == false {
+				if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.URLEncoding.EncodeToString([]byte(file_t.Filename)), buffer_t) == false {
 					ret_files = append(ret_files, UploadedFile{"", "", "error"})
 					continue
 				}

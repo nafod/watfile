@@ -63,7 +63,7 @@ func FileHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=31536000")
 
 	/* Filename */
-	base64_t, _ := base64.StdEncoding.DecodeString(filename)
+	base64_t, _ := base64.URLEncoding.DecodeString(filename)
 	fmt.Fprintf(w, "name: %s\n", base64_t)
 	fmt.Fprintf(w, "mime: %s\n", strings.Split(string(out), ";")[0])
 	fmt.Fprintf(w, "size: %s\n", FormatSize(fileinfo_t.Size()))
