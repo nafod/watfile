@@ -42,11 +42,14 @@ func main() {
 	/* Create initial directories, sets GOMAXPROC, and seeds the PRNG */
 	Init()
 
+	http.Handle("/", http.FileServer(http.Dir("./static")))
+
+	/*
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./static/index.html")
 	})
-
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	// Not needed (incorrect actually) because of the previous handler serving all / as static
+	*/
 
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 		UploadHandler(w, r)
