@@ -13,7 +13,6 @@ import (
 func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 
 	whitelist := []string{"image/gif", "image/png", "image/jpeg", "image/bmp", "application/pdf", "text/plain"}
-	log.Printf("Received request to download file (%+v)\n", r)
 	/* Security checks */
 	request_id_t := strings.TrimSpace(r.FormValue("id"))
 	if len(request_id_t) == 0 {
@@ -49,7 +48,6 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("File Directory (%+v)\n", UPLOAD_DIR+request_id+"/"+filename)
 	fileinfo_t, err := os.Stat(UPLOAD_DIR + request_id + "/" + filename)
 	if err != nil {
 		panic(err)

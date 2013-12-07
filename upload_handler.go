@@ -23,8 +23,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	final_id := ""
 	real_ip_t := r.Header.Get("X-Real-Ip")
 	perm := os.ModeDir | 0744
-	log.Printf("Received request: %+v\n", r)
-
 	if real_ip_t == "" {
 		real_ip_t = r.RemoteAddr
 	}
