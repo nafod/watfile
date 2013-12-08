@@ -22,7 +22,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	delete_id := ""
 	final_id := ""
 	real_ip_t := r.Header.Get("X-Real-Ip")
-	perm := os.ModeDir | 0744
+	perm := os.ModeDir | 0755
 	if real_ip_t == "" {
 		real_ip_t = r.RemoteAddr
 	}

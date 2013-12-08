@@ -17,7 +17,7 @@ func Init() {
 	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
 	rand.Seed(time.Now().UTC().UnixNano())
 
-    perm := os.ModeDir | 0744
+    perm := os.ModeDir | 0755
 
 	exists, _ := Exists(DATA_DIR)
 	if exists == false {
