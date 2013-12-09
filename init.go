@@ -49,4 +49,9 @@ func Init() {
 		os.Mkdir(FORCEDL_DIR, perm)
 		log.Printf("[LOG] Initializing force download metadata directory")
 	}
+	exists, _ = Exists(RATELIMIT_DIR)
+	if exists == false {
+		os.Mkdir(RATELIMIT_DIR, perm)
+		log.Printf("[LOG] Initializing rate limiting metadata directory")
+	}
 }

@@ -11,13 +11,20 @@ import (
 const (
 
 	/* Format "IP:Port number" */
-	//CONF_IP = "127.0.0.1:31114"
 	CONF_IP = ":31114"
 
 	/* Used for redirects */
 	CONF_DOMAIN = "http://watfile.com/"
 
 	CONF_MAX_FILESIZE = 10 << 20
+
+    /* Rate limiting */
+
+    /* Max files to upload in one period */
+    CONF_RATELIMIT_FILES = 30
+
+    /* Length of period in seconds */
+    CONF_RATELIMIT_TIME = 300
 
 	/* Base watfile data directories */
 	DATA_DIR    = "./data-watfile"
@@ -26,6 +33,7 @@ const (
 	ACCOUNT_DIR = DATA_DIR + "/accounts/"
 	DELETE_DIR  = DATA_DIR + "/delete/"
 	FORCEDL_DIR = DATA_DIR + "/forcedl/"
+	RATELIMIT_DIR = DATA_DIR + "/ratelimit/"
 )
 
 func WriteFileSafe(path string, content []byte) bool {

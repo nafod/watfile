@@ -27,6 +27,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		real_ip_t = r.RemoteAddr
 	}
 
+    /* Check if IP is currently ratelimited */
 	if RateLimit(real_ip_t) {
 		fmt.Fprintf(w, MakeResult(r, "rate", ""))
 		return
