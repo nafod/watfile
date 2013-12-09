@@ -72,9 +72,12 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=31536000, must-revalidate")
 	w.Header().Set("Last-Modified", fileinfo_t.ModTime().Format("Mon, 2 Jan 2006 15:04:05 MST"))
 	w.Header().Set("Content-Length", strconv.FormatInt(fileinfo_t.Size(), 10))
-	w.Header().Set("X-Accel-Redirect", "/protected/"+request_id+"/"+filename)
-	w.Header().Set("Content-Transfer-Encoding", "binary")
-	//http.ServeFile(w, r, UPLOAD_DIR+request_id+"/"+filename)
+	if CONF_USE_XACCEL {
+		w.Header().Set("X-Accel-Redirect", "/protected/"+request_id+"/"+filename)
+		w.Header().Set("Content-Transfer-Encoding", "binary")
+	} else {
+		http.ServeFile(w, r, UPLOAD_DIR+request_id+"/"+filename)
+	}
 	log.Printf("[LOG] File %s dowloaded\n", request_id)
 	return
 }

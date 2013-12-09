@@ -18,6 +18,9 @@ const (
 
 	CONF_MAX_FILESIZE = 10 << 20
 
+    /* Enable nginx X-Accel */
+    CONF_USE_XACCEL = true
+
     /* Rate limiting */
 
     /* Max files to upload in one period */
