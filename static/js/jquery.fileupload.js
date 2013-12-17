@@ -29,15 +29,18 @@
 
     // Detect file input support, based on
     // http://viljamis.com/blog/2012/file-upload-support-on-mobile/
-    $.support.fileInput = !(new RegExp(
+	  $.support.fileInput = true;
+	  if(new RegExp(
         // Handle devices which give false positives for the feature detection:
         '(Android (1\\.[0156]|2\\.[01]))' +
             '|(Windows Phone (OS 7|8\\.0))|(XBLWP)|(ZuneWP)|(WPDesktop)' +
             '|(w(eb)?OSBrowser)|(webOS)' +
             '|(Kindle/(1\\.0|2\\.[05]|3\\.0))'
-    ).test(window.navigator.userAgent) ||
+    ).test(window.navigator.userAgent)) {
         // Feature detection for all other devices:
-        $('<input type="file">').prop('disabled'));
+        //$('<input type="file">').prop('disabled'));
+		$('#hero').append('</br><div id=\"UAError\">Sorry, but your browser might not be supported:</br>'+window.navigator.userAgent+'</br>If the upload doesn\'t work, try another browser.</div>');
+	}
 
     // The FileReader API is not actually used, but works as feature detection,
     // as some Safari versions (5?) support XHR file uploads via the FormData API,
