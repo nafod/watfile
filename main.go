@@ -10,35 +10,42 @@ import (
 
 const (
 
+	/* Enable developer mode */
+	//CONF_IP     = ":62000"
+	//CONF_DOMAIN = "http://dev.watfile.com"
+	//DATA_DIR    = "./dev-data-watfile"
+
 	/* Format "IP:Port number" */
 	CONF_IP = ":31114"
 
 	/* Used for redirects */
 	CONF_DOMAIN = "http://watfile.com/"
 
+	/* Base watfile data directory */
+	DATA_DIR = "./data-watfile"
+
 	CONF_MAX_FILESIZE = 10 << 20
 
-    /* Toggles */
+	/* Toggles */
 
-    /* Enable nginx X-Accel */
-    CONF_USE_XACCEL = true
+	/* Enable nginx X-Accel */
+	CONF_USE_XACCEL = true
 
-    /* Enable Ratelimiting */
-    CONF_USE_RATELIMITING = true
+	/* Enable Ratelimiting */
+	CONF_USE_RATELIMITING = true
 
-    /* Max files to upload in one period */
-    CONF_RATELIMIT_FILES = 30
+	/* Max files to upload in one period */
+	CONF_RATELIMIT_FILES = 30
 
-    /* Length of period in seconds */
-    CONF_RATELIMIT_TIME = 300
+	/* Length of period in seconds */
+	CONF_RATELIMIT_TIME = 300
 
-	/* Base watfile data directories */
-	DATA_DIR    = "./data-watfile"
-	UPLOAD_DIR  = DATA_DIR + "/uploads/"
-	HASH_DIR    = DATA_DIR + "/hashes/"
-	ACCOUNT_DIR = DATA_DIR + "/accounts/"
-	DELETE_DIR  = DATA_DIR + "/delete/"
-	FORCEDL_DIR = DATA_DIR + "/forcedl/"
+	/* Base watfile data sub-directories */
+	UPLOAD_DIR    = DATA_DIR + "/uploads/"
+	HASH_DIR      = DATA_DIR + "/hashes/"
+	ACCOUNT_DIR   = DATA_DIR + "/accounts/"
+	DELETE_DIR    = DATA_DIR + "/delete/"
+	FORCEDL_DIR   = DATA_DIR + "/forcedl/"
 	RATELIMIT_DIR = DATA_DIR + "/ratelimit/"
 )
 
@@ -60,10 +67,10 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
 	/*
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./static/index.html")
-	})
-	// Not needed (incorrect actually) because of the previous handler serving all / as static
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, "./static/index.html")
+		})
+		// Not needed (incorrect actually) because of the previous handler serving all / as static
 	*/
 
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
@@ -108,5 +115,5 @@ func main() {
 	})
 
 	log.Fatal(http.ListenAndServe(CONF_IP, nil))
-    log.Printf("[LOG] Now listening on %s", CONF_IP)
+	log.Printf("[LOG] Now listening on %s", CONF_IP)
 }

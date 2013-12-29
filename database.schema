@@ -1,0 +1,13 @@
+CREATE TABLE files(
+    id SERIAL,
+    name VARCHAR(255),
+    size INT,
+    md5 CHAR(32) UNIQUE KEY,
+    fileid VARCHAR(12),
+    diskid VARCHAR(32),
+    deleteid CHAR(40),
+    uploaded VARCHAR(20),
+    downloads INT,
+    views INT,
+    author INT
+);

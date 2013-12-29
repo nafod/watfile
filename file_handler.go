@@ -53,7 +53,7 @@ func FileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fileinfo_t, _ := os.Stat(UPLOAD_DIR + request_id + "/" + filename)
-	out, err := exec.Command("file", "-bI", UPLOAD_DIR+request_id+"/"+filename).Output()
+	out, err := exec.Command("file", "-biL", UPLOAD_DIR+request_id+"/"+filename).Output()
 	if err != nil {
 		log.Printf("[ERROR] Unable to determine mine of file %s\n", request_id)
 	}
