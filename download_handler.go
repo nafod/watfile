@@ -47,9 +47,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-    log.Printf("Database values: %s, %d, %s, %d\n", filename, filesize, diskid, uploaded)
-
-	out, err := exec.Command("file", "-biL", UPLOAD_DIR+request_id+"/"+filename).Output()
+	out, err := exec.Command("file", "-biL", UPLOAD_DIR+diskid).Output()
 
 	// Tells IE not to try to guess the content type
 	w.Header().Set("X-Content-Type-Options", "nosniff")
