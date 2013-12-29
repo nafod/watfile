@@ -14,6 +14,12 @@ const (
 	//CONF_IP     = ":62000"
 	//CONF_DOMAIN = "http://dev.watfile.com"
 	//DATA_DIR    = "./dev-data-watfile"
+	UPLOAD_DIR    = DATA_DIR + "/uploads/"
+
+    CONF_DB_USERNAME = "wfproduction"
+    CONF_DB_PASSWORD = "F18x2id72Xew8s9719O5Ar87v88Hcd"
+    CONF_DB_HOST = "localhost"
+    CONF_DB_NAME = "watfile"
 
 	/* Format "IP:Port number" */
 	CONF_IP = ":31114"
@@ -40,8 +46,6 @@ const (
 	/* Length of period in seconds */
 	CONF_RATELIMIT_TIME = 300
 
-	/* Base watfile data sub-directories */
-	UPLOAD_DIR    = DATA_DIR + "/uploads/"
 	HASH_DIR      = DATA_DIR + "/hashes/"
 	ACCOUNT_DIR   = DATA_DIR + "/accounts/"
 	DELETE_DIR    = DATA_DIR + "/delete/"
@@ -62,7 +66,8 @@ func WriteEmptyFile(path string) bool {
 func main() {
 
 	/* Create initial directories, sets GOMAXPROC, and seeds the PRNG */
-	Init()
+	db := Init()
+    defer db.Close()
 
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
@@ -74,21 +79,21 @@ func main() {
 	*/
 
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-		UploadHandler(w, r)
+		UploadHandler(w, r, db)
 	})
-
+/*
 	http.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
-		FileHandler(w, r)
+		FileHandler(w, r, db)
 	})
-
+*/
 	http.HandleFunc("/dl", func(w http.ResponseWriter, r *http.Request) {
-		DownloadHandler(w, r)
+		DownloadHandler(w, r, db)
 	})
-
+/*
 	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
-		DeleteHandler(w, r)
+		DeleteHandler(w, r, db)
 	})
-
+*/
 	/* API paths */
 	//http.HandleFunc("/api/v1/upload", func(w http.ResponseWriter, r *http.Request) {
 	//	APIUploadHandler(w, r)

@@ -1,8 +1,10 @@
 package main
 
 import (
-	"log"
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
 	"math/rand"
+    "log"
 	"os"
 	"runtime"
 	"time"
@@ -12,12 +14,12 @@ import (
 	Initial code to set up watfile directories,
 	seed PRNG, and set the number of processes
 */
-func Init() {
+func Init() *sql.DB {
 
 	runtime.GOMAXPROCS(runtime.NumCPU() + 1)
 	rand.Seed(time.Now().UTC().UnixNano())
 
-    perm := os.ModeDir | 0755
+	perm := os.ModeDir | 0755
 
 	exists, _ := Exists(DATA_DIR)
 	if exists == false {
@@ -29,29 +31,11 @@ func Init() {
 		os.Mkdir(UPLOAD_DIR, perm)
 		log.Printf("[LOG] Initializing upload directory")
 	}
-	exists, _ = Exists(HASH_DIR)
-	if exists == false {
-		os.Mkdir(HASH_DIR, perm)
-		log.Printf("[LOG] Initializing file hash directory")
+
+	db, err := sql.Open("mysql", CONF_DB_USERNAME+":"+CONF_DB_PASSWORD+"@"+CONF_DB_HOST+"/"+CONF_DB_NAME)
+	if err != nil {
+		panic(err)
 	}
-	exists, _ = Exists(ACCOUNT_DIR)
-	if exists == false {
-		os.Mkdir(ACCOUNT_DIR, perm)
-		log.Printf("[LOG] Initializing user account directory")
-	}
-	exists, _ = Exists(DELETE_DIR)
-	if exists == false {
-		os.Mkdir(DELETE_DIR, perm)
-		log.Printf("[LOG] Initializing file delete metadata directory")
-	}
-	exists, _ = Exists(FORCEDL_DIR)
-	if exists == false {
-		os.Mkdir(FORCEDL_DIR, perm)
-		log.Printf("[LOG] Initializing force download metadata directory")
-	}
-	exists, _ = Exists(RATELIMIT_DIR)
-	if exists == false {
-		os.Mkdir(RATELIMIT_DIR, perm)
-		log.Printf("[LOG] Initializing rate limiting metadata directory")
-	}
+
+	return db
 }

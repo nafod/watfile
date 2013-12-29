@@ -2,9 +2,10 @@ package main
 
 import (
 	"crypto/md5"
-	"encoding/base64"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+    "time"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -18,16 +19,17 @@ type UploadedFile struct {
 	Error string
 }
 
-func UploadHandler(w http.ResponseWriter, r *http.Request) {
+func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	delete_id := ""
 	final_id := ""
+
+	/* Determine user IP */
 	real_ip_t := r.Header.Get("X-Real-Ip")
-	perm := os.ModeDir | 0755
 	if real_ip_t == "" {
 		real_ip_t = r.RemoteAddr
 	}
 
-    /* Check if IP is currently ratelimited */
+	/* Check if IP is currently ratelimited */
 	if RateLimit(real_ip_t) {
 		fmt.Fprintf(w, MakeResult(r, "rate", ""))
 		return
@@ -35,76 +37,83 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseMultipartForm(CONF_MAX_FILESIZE)
 	var ret_files []UploadedFile
-	if _, ok := r.MultipartForm.File["upload"]; ok {
-		if len(r.MultipartForm.File["upload"]) == 0 {
-			fmt.Fprintf(w, MakeResult(r, "error", ""))
-			return
-		}
-		files_t := r.MultipartForm.File["upload"]
-		ret_files = make([]UploadedFile, len(r.MultipartForm.File["upload"]))
-		for _, file_t := range files_t {
-			buffer_t := make([]byte, CONF_MAX_FILESIZE+1)
-			f, err := file_t.Open()
-			defer f.Close()
 
-			size_t, err := f.Read(buffer_t)
-			if err != nil {
-				ret_files = append(ret_files, UploadedFile{"", "", "error"})
-				continue
-			}
-			if size_t > CONF_MAX_FILESIZE+1 {
-				ret_files = append(ret_files, UploadedFile{"", "", "error"})
-				continue
-			}
+	files_t, ok := r.MultipartForm.File["upload"]
 
-			buffer_t = buffer_t[:size_t]
-
-			md5_t := md5.New()
-			md5_t.Write(buffer_t)
-			hash_t := hex.EncodeToString(md5_t.Sum(nil))
-			delete_id = UniqueID(30, false)
-			exists_t, _ := Exists(HASH_DIR + hash_t + "/")
-			if exists_t {
-				old_id := GetIDHash(hash_t)
-				final_id = UniqueID(8, true)
-				os.Mkdir(UPLOAD_DIR+final_id, perm)
-
-				files_t, _ := ioutil.ReadDir(UPLOAD_DIR + old_id + "/")
-
-				filename := ""
-				for a := range files_t {
-					if files_t[a].Name() != "." && files_t[a].Name() != ".." {
-						filename = files_t[a].Name()
-						break
-					}
-				}
-                os.Symlink("../"+old_id+"/"+filename, UPLOAD_DIR+final_id+"/"+base64.URLEncoding.EncodeToString([]byte(file_t.Filename)))
-				os.Mkdir(DELETE_DIR+delete_id, perm)
-				WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
-			} else {
-				final_id = UniqueID(8, true)
-				os.Mkdir(UPLOAD_DIR+final_id, perm)
-				if WriteFileSafe(UPLOAD_DIR+final_id+"/"+base64.URLEncoding.EncodeToString([]byte(file_t.Filename)), buffer_t) == false {
-					ret_files = append(ret_files, UploadedFile{"", "", "error"})
-					continue
-				}
-				os.Mkdir(HASH_DIR+hash_t, perm)
-				WriteEmptyFile(HASH_DIR + hash_t + "/" + final_id)
-				os.Mkdir(DELETE_DIR+delete_id, perm)
-				WriteEmptyFile(DELETE_DIR + delete_id + "/" + final_id)
-				/* Check image size and create forcedl here */
-			}
-			ret_files = append(ret_files, UploadedFile{file_t.Filename, final_id, ""})
-		}
-	} else {
+	/* No files actually uploaded */
+	if ok != true || len(files_t) == 0 {
 		fmt.Fprintf(w, MakeResult(r, "error", ""))
 		return
 	}
-	log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
-	//fmt.Fprintf(w, MakeResult(r, final_id, delete_id))
-	json_out, err := json.Marshal(map[string][]UploadedFile{"files": ret_files[1:]})
+
+	ret_files = make([]UploadedFile, len(r.MultipartForm.File["upload"]))
+
+	dbtxt, err := db.Begin()
 	if err != nil {
+		/* Database problem, likely fatal */
 		panic(err)
 	}
+
+	for _, file_t := range files_t {
+		buffer_t := make([]byte, CONF_MAX_FILESIZE+1)
+		f, err := file_t.Open()
+		defer f.Close()
+
+		/* Couldn't read the file */
+		size_t, err := f.Read(buffer_t)
+		if err != nil {
+			ret_files = append(ret_files, UploadedFile{"", "", "error"})
+			continue
+		}
+
+		/* File is bigger than the maximum filesize */
+		if size_t > CONF_MAX_FILESIZE+1 {
+			ret_files = append(ret_files, UploadedFile{"", "", "error"})
+			continue
+		}
+
+		/* Strip fial character from buffer */
+		buffer_t = buffer_t[:size_t]
+
+		/* Generate MD5 hash of file */
+		md5_t := md5.New()
+		md5_t.Write(buffer_t)
+		hash_t := hex.EncodeToString(md5_t.Sum(nil))
+
+		/* Unique file ID and deletion ID */
+		final_id = UniqueID(8, true)
+		delete_id = UniqueID(30, false)
+
+		/* Check if file has already been uploaded (de-duplication) */
+		exists_t, err := Exists(UPLOAD_DIR + hash_t)
+		if err != nil {
+			ret_files = append(ret_files, UploadedFile{"", "", "error"})
+			continue
+		}
+
+        dbstmt, err := dbtxt.Prepare("INSERT INTO files(name, size, md5, fileid, diskid, deleteid, uploaded, downloads, views, author) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        if err != nil {
+            panic(err)
+        }
+        defer dbstmt.Close()
+
+        dbstmt.Exec(file_t.Filename, size_t, hash_t, final_id, hash_t, delete_id, time.Now().Unix(), 0, 0, 0)
+        if exists_t == false {
+            ioutil.WriteFile(UPLOAD_DIR+hash_t, buffer_t, os.ModePerm)
+        }
+		ret_files = append(ret_files, UploadedFile{file_t.Filename, final_id, ""})
+	}
+
+	log.Printf("[LOG] File uploaded, assigned ID %s with deletion ID %s\n", final_id, delete_id)
+
+	/* Put changes in database */
+	dbtxt.Commit()
+	/* Create response */
+	json_out, err := json.Marshal(map[string][]UploadedFile{"files": ret_files[1:]})
+	if err != nil {
+		/* Panic - unable to create JSON */
+		panic(err)
+	}
+
 	fmt.Fprintf(w, string(json_out))
 }
