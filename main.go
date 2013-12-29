@@ -18,7 +18,7 @@ const (
 
     CONF_DB_USERNAME = "wfproduction"
     CONF_DB_PASSWORD = "F18x2id72Xew8s9719O5Ar87v88Hcd"
-    CONF_DB_HOST = "localhost"
+    CONF_DB_HOST = ""
     CONF_DB_NAME = "watfile"
 
 	/* Format "IP:Port number" */
