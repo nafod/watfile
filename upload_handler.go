@@ -51,6 +51,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	dbtxt, err := db.Begin()
 	if err != nil {
 		/* Database problem, likely fatal */
+        dbtxt.Rollback()
 		panic(err)
 	}
 
@@ -93,11 +94,16 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
         dbstmt, err := dbtxt.Prepare("INSERT INTO files(name, size, md5, fileid, diskid, deleteid, uploaded, downloads, views, author) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         if err != nil {
+            dbtxt.Rollback()
             panic(err)
         }
         defer dbstmt.Close()
 
-        dbstmt.Exec(file_t.Filename, size_t, hash_t, final_id, hash_t, delete_id, time.Now().Unix(), 0, 0, 0)
+        _, err = dbstmt.Exec(file_t.Filename, size_t, hash_t, final_id, hash_t, delete_id, time.Now().Unix(), 0, 0, 0)
+        if err != nil {
+            dbtxt.Rollback()
+            panic(err)
+        }
         if exists_t == false {
             ioutil.WriteFile(UPLOAD_DIR+hash_t, buffer_t, os.ModePerm)
         }
