@@ -22,8 +22,8 @@ func MakeResult(req *http.Request, t string, del string) string {
 	return fmt.Sprintf(`{"uid": %s, "err": "%s"`, 0, t)
 }
 
-func GetIDHash(hash string) string {
-	files_t, _ := ioutil.ReadDir(HASH_DIR + hash + "/")
+func GetIDHash(cfg Config, hash string) string {
+	files_t, _ := ioutil.ReadDir(cfg.Directories.Hash + hash + "/")
 	for a := range files_t {
 		if files_t[a].Name() != "." && files_t[a].Name() != ".." {
 			return files_t[a].Name()
@@ -63,12 +63,12 @@ func Exists(path string) (bool, error) {
 	return false, err
 }
 
-func UniqueID(todo int, exists bool) string {
+func UniqueID(cfg Config, todo int, exists bool) string {
 	ret_t := strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
 	exists_t := exists
 	for exists_t {
 		ret_t = strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
-		exists_t, _ = Exists(UPLOAD_DIR + ret_t)
+		exists_t, _ = Exists(cfg.Directories.Upload + ret_t)
 	}
 	return ret_t
 }

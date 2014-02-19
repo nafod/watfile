@@ -13,31 +13,31 @@ import (
 	"strings"
 )
 
-func FileHandler(w http.ResponseWriter, r *http.Request) {
+func FileHandler(cfg Config, w http.ResponseWriter, r *http.Request) {
 
 	//whitelist := []string{"image/gif", "image/png", "image/jpeg", "image/bmp", "application/pdf", "text/plain"}
 
 	/* Security checks */
 	request_id_t := strings.TrimSpace(r.FormValue("id"))
 	if len(request_id_t) == 0 {
-		http.Redirect(w, r, CONF_DOMAIN, 303)
+		http.Redirect(w, r, cfg.Main.Domain, 303)
 		return
 	}
 
 	request_commands := strings.Split(request_id_t, "/")
 	request_id := strings.Split(request_commands[0], ".")[0]
 	if len(request_id) == 0 {
-		http.Redirect(w, r, CONF_DOMAIN, 303)
+		http.Redirect(w, r, cfg.Main.Domain, 303)
 		return
 	}
 
-	exists, _ := Exists(UPLOAD_DIR + request_id + "/")
+	exists, _ := Exists(cfg.Directories.Upload + request_id + "/")
 	if exists == false {
-		http.Redirect(w, r, CONF_DOMAIN, 303)
+		http.Redirect(w, r, cfg.Main.Domain, 303)
 		return
 	}
 
-	files_t, _ := ioutil.ReadDir(UPLOAD_DIR + request_id + "/")
+	files_t, _ := ioutil.ReadDir(cfg.Directories.Upload + request_id + "/")
 
 	filename := ""
 	for a := range files_t {
@@ -48,12 +48,12 @@ func FileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(filename) == 0 {
-		http.Redirect(w, r, CONF_DOMAIN, 303)
+		http.Redirect(w, r, cfg.Main.Domain, 303)
 		return
 	}
 
-	fileinfo_t, _ := os.Stat(UPLOAD_DIR + request_id + "/" + filename)
-	out, err := exec.Command("file", "-biL", UPLOAD_DIR+request_id+"/"+filename).Output()
+	fileinfo_t, _ := os.Stat(cfg.Directories.Upload + request_id + "/" + filename)
+	out, err := exec.Command("file", "-biL", cfg.Directories.Upload+request_id+"/"+filename).Output()
 	if err != nil {
 		log.Printf("[ERROR] Unable to determine mine of file %s\n", request_id)
 	}
@@ -70,7 +70,7 @@ func FileHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "uploaded: %s\n", fileinfo_t.ModTime().Format("Mon, 2 Jan 2006 15:04:05 MST"))
 
 	/* File MD5 */
-	filedat_t, _ := ioutil.ReadFile(UPLOAD_DIR + request_id + "/" + filename)
+	filedat_t, _ := ioutil.ReadFile(cfg.Directories.Upload + request_id + "/" + filename)
 	md5_t := md5.New()
 	md5_t.Write(filedat_t)
 	fmt.Fprintf(w, "md5: %x\n", md5_t.Sum(nil))
@@ -78,7 +78,7 @@ func FileHandler(w http.ResponseWriter, r *http.Request) {
 	sha1_t := sha1.New()
 	sha1_t.Write(filedat_t)
 	fmt.Fprintf(w, "sha1: %x\n", sha1_t.Sum(nil))
-	fmt.Fprintf(w, "Download file: %sdl?id=%s\n", CONF_DOMAIN, request_id)
+	fmt.Fprintf(w, "Download file: %sdl?id=%s\n", cfg.Main.Domain, request_id)
 	log.Printf("[LOG] File %s viewed\n", request_id)
 	return
 }

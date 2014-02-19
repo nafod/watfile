@@ -19,7 +19,7 @@ type UploadedFile struct {
 	Error string
 }
 
-func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	delete_id := ""
 	final_id := ""
 
@@ -30,12 +30,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 	/* Check if IP is currently ratelimited */
-	if RateLimit(real_ip_t) {
+	if RateLimit(cfg, real_ip_t) {
 		fmt.Fprintf(w, MakeResult(r, "rate", ""))
 		return
 	}
 
-	r.ParseMultipartForm(CONF_MAX_FILESIZE)
+	r.ParseMultipartForm(int64(cfg.Limits.MaxFilesize))
 	var ret_files []UploadedFile
 
 	files_t, ok := r.MultipartForm.File["upload"]
@@ -56,7 +56,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 	for _, file_t := range files_t {
-		buffer_t := make([]byte, CONF_MAX_FILESIZE+1)
+		buffer_t := make([]byte, cfg.Limits.MaxFilesize+1)
 		f, err := file_t.Open()
 		defer f.Close()
 
@@ -68,7 +68,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		}
 
 		/* File is bigger than the maximum filesize */
-		if size_t > CONF_MAX_FILESIZE+1 {
+		if uint64(size_t) > cfg.Limits.MaxFilesize+1 {
 			ret_files = append(ret_files, UploadedFile{"", "", "error"})
 			continue
 		}
@@ -82,11 +82,11 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		hash_t := hex.EncodeToString(md5_t.Sum(nil))
 
 		/* Unique file ID and deletion ID */
-		final_id = UniqueID(8, true)
-		delete_id = UniqueID(30, false)
+		final_id = UniqueID(cfg, 8, true)
+		delete_id = UniqueID(cfg, 30, false)
 
 		/* Check if file has already been uploaded (de-duplication) */
-		exists_t, err := Exists(UPLOAD_DIR + hash_t)
+		exists_t, err := Exists(cfg.Directories.Upload + hash_t)
 		if err != nil {
 			ret_files = append(ret_files, UploadedFile{"", "", "error"})
 			continue
@@ -105,7 +105,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
             panic(err)
         }
         if exists_t == false {
-            ioutil.WriteFile(UPLOAD_DIR+hash_t, buffer_t, os.ModePerm)
+            ioutil.WriteFile(cfg.Directories.Upload + hash_t, buffer_t, os.ModePerm)
         }
 		ret_files = append(ret_files, UploadedFile{file_t.Filename, final_id, ""})
 	}

@@ -10,31 +10,31 @@ import (
 	"time"
 )
 
-func RateLimit(ip string) bool {
-    if CONF_USE_RATELIMITING {
+func RateLimit(cfg Config, ip string) bool {
+    if cfg.Toggles.UseRatelimit {
         md5_t := md5.New()
         io.WriteString(md5_t, ip)
         hash_t := hex.EncodeToString(md5_t.Sum(nil))
-        exists, _ := Exists(RATELIMIT_DIR + hash_t)
+        exists, _ := Exists(cfg.Directories.Ratelimit + hash_t)
         if exists {
-            file_t, _ := os.Open(RATELIMIT_DIR + hash_t)
+            file_t, _ := os.Open(cfg.Directories.Ratelimit + hash_t)
             fileinfo_t, _ := file_t.Stat()
             filemtime := fileinfo_t.ModTime().Unix()
             defer file_t.Close()
-            if filemtime + CONF_RATELIMIT_TIME > time.Now().Unix() {
-                curr_t, _ := ioutil.ReadFile(RATELIMIT_DIR + hash_t)
-                if curr_t[0] == CONF_RATELIMIT_FILES {
-                    log.Printf("[LOG] %s is rate limited for exceed %d files/% seconds\n", CONF_RATELIMIT_FILES, CONF_RATELIMIT_TIME)
+            if filemtime + int64(cfg.Limits.RatelimitTime) > time.Now().Unix() {
+                curr_t, _ := ioutil.ReadFile(cfg.Directories.Ratelimit + hash_t)
+                if uint64(curr_t[0]) == cfg.Limits.RatelimitFiles {
+                    log.Printf("[LOG] %s is rate limited for exceed %d files/% seconds\n", cfg.Limits.RatelimitFiles, cfg.Limits.RatelimitTime)
                     return true
                 } else {
-                    WriteFileSafe(RATELIMIT_DIR + hash_t, []byte{curr_t[0] + 1})
+                    WriteFileSafe(cfg.Directories.Ratelimit + hash_t, []byte{curr_t[0] + 1})
                 }
                 return false
             }
         } else {
             log.Printf("[LOG] Rate Limiting is currently disabled!\n")
         }
-        WriteFileSafe(RATELIMIT_DIR + hash_t, []byte{1})
+        WriteFileSafe(cfg.Directories.Ratelimit + hash_t, []byte{1})
     }
     return false
 }

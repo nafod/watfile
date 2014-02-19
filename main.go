@@ -1,6 +1,7 @@
 package main
 
 import (
+	"code.google.com/p/gcfg"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -8,50 +9,40 @@ import (
 	"os"
 )
 
-const (
+type Config struct {
+	Main struct {
+		IP            string
+		Domain        string
+	}
 
-	/* Enable developer mode */
-	//CONF_IP     = ":62000"
-	//CONF_DOMAIN = "http://dev.watfile.com"
-	//DATA_DIR    = "./dev-data-watfile"
-	UPLOAD_DIR    = DATA_DIR + "/uploads/"
+	Database struct {
+		Username string
+		Password string
+		Host     string
+		Name     string
+	}
 
-    CONF_DB_USERNAME = "wfproduction"
-    CONF_DB_PASSWORD = "F18x2id72Xew8s9719O5Ar87v88Hcd"
-    CONF_DB_HOST = ""
-    CONF_DB_NAME = "watfile"
+	Toggles struct {
+		UseRatelimit bool
+		UseXaccel    bool
+	}
 
-	/* Format "IP:Port number" */
-	CONF_IP = ":31114"
+	Limits struct {
+		MaxFilesize    uint64
+		RatelimitFiles uint64
+		RatelimitTime  uint64
+	}
 
-	/* Used for redirects */
-	CONF_DOMAIN = "http://watfile.com/"
-
-	/* Base watfile data directory */
-	DATA_DIR = "./data-watfile"
-
-	CONF_MAX_FILESIZE = 10 << 20
-
-	/* Toggles */
-
-	/* Enable nginx X-Accel */
-	CONF_USE_XACCEL = true
-
-	/* Enable Ratelimiting */
-	CONF_USE_RATELIMITING = true
-
-	/* Max files to upload in one period */
-	CONF_RATELIMIT_FILES = 30
-
-	/* Length of period in seconds */
-	CONF_RATELIMIT_TIME = 300
-
-	HASH_DIR      = DATA_DIR + "/hashes/"
-	ACCOUNT_DIR   = DATA_DIR + "/accounts/"
-	DELETE_DIR    = DATA_DIR + "/delete/"
-	FORCEDL_DIR   = DATA_DIR + "/forcedl/"
-	RATELIMIT_DIR = DATA_DIR + "/ratelimit/"
-)
+	Directories struct {
+        Data      string
+		Upload    string
+		Hash      string
+		Account   string
+		Delete    string
+		ForceDL   string
+		Ratelimit string
+	}
+}
 
 func WriteFileSafe(path string, content []byte) bool {
 	ioutil.WriteFile(path, content, os.ModePerm)
@@ -65,43 +56,44 @@ func WriteEmptyFile(path string) bool {
 
 func main() {
 
+	/* Load the configuration */
+	var cfg Config
+	err := gcfg.ReadFileInto(&cfg, "watfile.conf")
+    if err != nil {
+        /* Couldn't read the config file */
+        panic(err)
+    }
+
 	/* Create initial directories, sets GOMAXPROC, and seeds the PRNG */
-	db := Init()
-    defer db.Close()
+	db := Init(cfg)
+	defer db.Close()
 
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
-	/*
-		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, "./static/index.html")
-		})
-		// Not needed (incorrect actually) because of the previous handler serving all / as static
-	*/
-
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-		UploadHandler(w, r, db)
+		UploadHandler(cfg, w, r, db)
 	})
-/*
-	http.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
-		FileHandler(w, r, db)
-	})
-*/
+	/*
+		http.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
+			FileHandler(w, r, db)
+		})
+	*/
 	http.HandleFunc("/dl", func(w http.ResponseWriter, r *http.Request) {
-		DownloadHandler(w, r, db)
+		DownloadHandler(cfg, w, r, db)
 	})
-/*
-	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
-		DeleteHandler(w, r, db)
-	})
-*/
+	/*
+		http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
+			DeleteHandler(w, r, db)
+		})
+	*/
 	/* API paths */
 	//http.HandleFunc("/api/v1/upload", func(w http.ResponseWriter, r *http.Request) {
 	//	APIUploadHandler(w, r)
 	//})
 
-	http.HandleFunc("/api/v1/dl", func(w http.ResponseWriter, r *http.Request) {
+	/*http.HandleFunc("/api/v1/dl", func(w http.ResponseWriter, r *http.Request) {
 		APIDownloadHandler(w, r)
-	})
+	})*/
 
 	/*http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		LoginHandler(w, r, mc)
@@ -119,6 +111,6 @@ func main() {
 		fmt.Fprintf(w, "42")
 	})
 
-	log.Fatal(http.ListenAndServe(CONF_IP, nil))
-	log.Printf("[LOG] Now listening on %s", CONF_IP)
+	log.Fatal(http.ListenAndServe(cfg.Main.IP, nil))
+	log.Printf("[LOG] Now listening on %s", cfg.Main.IP)
 }
