@@ -14,11 +14,18 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 
 	whitelist := []string{"image/gif", "image/png", "image/jpeg", "image/bmp", "application/pdf", "text/plain"}
 	/* Security checks */
+    log.Printf("%+v\n", r)
+
 	request_id_t := strings.TrimSpace(r.FormValue("id"))
 	if len(request_id_t) == 0 {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
 		return
 	}
+
+    /* Remoev leadinig slash if passed via arg */
+    if request_id_t[0] == '/' {
+        request_id_t = request_id_t[1:]
+    }
 
 	request_commands := strings.Split(request_id_t, "/")
 	request_id := strings.Split(request_commands[0], ".")[0]
@@ -74,7 +81,7 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 		w.Header().Set("X-Accel-Redirect", "/protected/"+diskid)
 		w.Header().Set("Content-Transfer-Encoding", "binary")
 	} else {
-		http.ServeFile(w, r, cfg.Directories.Upload+request_id+"/"+diskid)
+		http.ServeFile(w, r, cfg.Directories.Upload+diskid)
 	}
 	log.Printf("[LOG] File %s dowloaded\n", request_id)
 	return
