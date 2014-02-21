@@ -14,11 +14,10 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 
 	whitelist := []string{"image/gif", "image/png", "image/jpeg", "image/bmp", "application/pdf", "text/plain"}
 	/* Security checks */
-    log.Printf("%+v\n", r)
-
 	request_id_t := strings.TrimSpace(r.FormValue("id"))
 	if len(request_id_t) == 0 {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
+        log.Printf("[LOG] No request passed\n")
 		return
 	}
 
@@ -31,6 +30,7 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 	request_id := strings.Split(request_commands[0], ".")[0]
 	if len(request_id) == 0 {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
+        log.Printf("[LOG] Invalid format for download request\n")
 		return
 	}
 
@@ -51,6 +51,7 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 	err := dbrow.Scan(&filename, &filesize, &diskid, &uploaded)
 	if err != nil {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
+        log.Printf("[LOG] Requested file does not exist\n")
 		return
 	}
 

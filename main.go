@@ -2,7 +2,6 @@ package main
 
 import (
 	"code.google.com/p/gcfg"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -106,10 +105,6 @@ func main() {
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		RegisterHandler(w, r, mc)
 	})*/
-
-	http.HandleFunc("/mu-3f8488db-7fabdac2-b1583628-30caf91d", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "42")
-	})
 
 	log.Fatal(http.ListenAndServe(cfg.Main.IP, nil))
 	log.Printf("[LOG] Now listening on %s", cfg.Main.IP)

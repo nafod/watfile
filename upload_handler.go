@@ -32,6 +32,7 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 	/* Check if IP is currently ratelimited */
 	if RateLimit(cfg, real_ip_t) {
 		fmt.Fprintf(w, MakeResult(r, "rate", ""))
+        log.Printf("[LOG] IP %s was blocked from uploading due to rate limiting\n", real_ip_t)
 		return
 	}
 
@@ -43,6 +44,7 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 	/* No files actually uploaded */
 	if ok != true || len(files_t) == 0 {
 		fmt.Fprintf(w, MakeResult(r, "error", ""))
+        log.Printf("[LOG] Invalid file was uploaded (source IP: %s)\n", real_ip_t)
 		return
 	}
 
@@ -64,12 +66,14 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 		size_t, err := f.Read(buffer_t)
 		if err != nil {
 			ret_files = append(ret_files, UploadedFile{"", "", "error"})
+            log.Printf("[LOG] Uploaded file couldn't be read (source IP: %s)\n", real_ip_t)
 			continue
 		}
 
 		/* File is bigger than the maximum filesize */
 		if uint64(size_t) > cfg.Limits.MaxFilesize+1 {
 			ret_files = append(ret_files, UploadedFile{"", "", "error"})
+            log.Printf("[LOG] File uploaded was over max size (size: %d)\n", size_t)
 			continue
 		}
 
