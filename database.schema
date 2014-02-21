@@ -1,13 +1,16 @@
-CREATE TABLE files(
-    id SERIAL,
-    name VARCHAR(255),
-    size INT,
-    md5 CHAR(32) UNIQUE KEY,
-    fileid VARCHAR(12),
-    diskid VARCHAR(32),
-    deleteid CHAR(40),
-    uploaded VARCHAR(20),
-    downloads INT,
-    views INT,
-    author INT
-);
+CREATE TABLE `files` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `size` int(11) DEFAULT NULL,
+  `md5` char(32) DEFAULT NULL,
+  `fileid` varchar(12) DEFAULT NULL,
+  `diskid` varchar(32) DEFAULT NULL,
+  `deleteid` char(40) DEFAULT NULL,
+  `uploaded` varchar(20) DEFAULT NULL,
+  `downloads` int(11) DEFAULT NULL,
+  `views` int(11) DEFAULT NULL,
+  `author` int(11) DEFAULT NULL,
+  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `fileid` (`fileid`),
+  UNIQUE KEY `deleteid` (`deleteid`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=latin1

@@ -87,10 +87,10 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 
 		/* Check if file has already been uploaded (de-duplication) */
 		exists_t, err := Exists(cfg.Directories.Upload + hash_t)
-		if err != nil {
+		/*if err != nil {
 			ret_files = append(ret_files, UploadedFile{"", "", "error"})
 			continue
-		}
+		}*/
 
         dbstmt, err := dbtxt.Prepare("INSERT INTO files(name, size, md5, fileid, diskid, deleteid, uploaded, downloads, views, author) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         if err != nil {
