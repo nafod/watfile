@@ -66,6 +66,7 @@ func Exists(path string) (bool, error) {
 func UniqueID(cfg Config, todo int, exists bool) string {
 	ret_t := strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
 	exists_t := exists
+
 	for exists_t {
 		ret_t = strconv.FormatUint(uint64(rand.Int63n(4294967295)), 36)
 		exists_t, _ = Exists(cfg.Directories.Upload + ret_t)

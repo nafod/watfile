@@ -10,8 +10,8 @@ import (
 
 type Config struct {
 	Main struct {
-		IP            string
-		Domain        string
+		IP     string
+		Domain string
 	}
 
 	Database struct {
@@ -33,7 +33,7 @@ type Config struct {
 	}
 
 	Directories struct {
-        Data      string
+		Data      string
 		Upload    string
 		Hash      string
 		Account   string
@@ -58,10 +58,10 @@ func main() {
 	/* Load the configuration */
 	var cfg Config
 	err := gcfg.ReadFileInto(&cfg, "watfile.conf")
-    if err != nil {
-        /* Couldn't read the config file */
-        panic(err)
-    }
+	if err != nil {
+		/* Couldn't read the config file */
+		panic(err)
+	}
 
 	/* Create initial directories, sets GOMAXPROC, and seeds the PRNG */
 	db := Init(cfg)
@@ -72,11 +72,11 @@ func main() {
 	http.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
 		UploadHandler(cfg, w, r, db)
 	})
-	/*
-		http.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
-			FileHandler(w, r, db)
-		})
-	*/
+
+	http.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
+		FileHandler(cfg, w, r, db)
+	})
+
 	http.HandleFunc("/dl", func(w http.ResponseWriter, r *http.Request) {
 		DownloadHandler(cfg, w, r, db)
 	})

@@ -3,17 +3,17 @@ package main
 import (
 	"crypto/md5"
 	"crypto/sha1"
-	"encoding/base64"
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
-func FileHandler(cfg Config, w http.ResponseWriter, r *http.Request) {
+func FileHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	//whitelist := []string{"image/gif", "image/png", "image/jpeg", "image/bmp", "application/pdf", "text/plain"}
 
@@ -37,22 +37,19 @@ func FileHandler(cfg Config, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files_t, _ := ioutil.ReadDir(cfg.Directories.Upload + request_id + "/")
+	dbrow := db.QueryRow("SELECT name, size, diskid, uploaded FROM files WHERE fileid = ?", request_id)
+	var filename string
+	var filesize int64
+	var diskid string
+	var uploaded int64
 
-	filename := ""
-	for a := range files_t {
-		if files_t[a].Name() != "." && files_t[a].Name() != ".." {
-			filename = files_t[a].Name()
-			break
-		}
-	}
-
-	if len(filename) == 0 {
+	err := dbrow.Scan(&filename, &filesize, &diskid, &uploaded)
+	if err != nil {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
+		log.Printf("[LOG] Requested file does not exist1\n")
 		return
 	}
 
-	fileinfo_t, _ := os.Stat(cfg.Directories.Upload + request_id + "/" + filename)
 	out, err := exec.Command("file", "-biL", cfg.Directories.Upload+request_id+"/"+filename).Output()
 	if err != nil {
 		log.Printf("[ERROR] Unable to determine mine of file %s\n", request_id)
@@ -63,14 +60,13 @@ func FileHandler(cfg Config, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=31536000")
 
 	/* Filename */
-	base64_t, _ := base64.URLEncoding.DecodeString(filename)
-	fmt.Fprintf(w, "name: %s\n", base64_t)
+	fmt.Fprintf(w, "name: %s\n", filename)
 	fmt.Fprintf(w, "mime: %s\n", strings.Split(string(out), ";")[0])
-	fmt.Fprintf(w, "size: %s\n", FormatSize(fileinfo_t.Size()))
-	fmt.Fprintf(w, "uploaded: %s\n", fileinfo_t.ModTime().Format("Mon, 2 Jan 2006 15:04:05 MST"))
+	fmt.Fprintf(w, "size: %s\n", filesize)
+	fmt.Fprintf(w, "uploaded: %s\n", time.Unix(uploaded, 0).Format("Mon, 2 Jan 2006 15:04:05 MST"))
 
 	/* File MD5 */
-	filedat_t, _ := ioutil.ReadFile(cfg.Directories.Upload + request_id + "/" + filename)
+	filedat_t, _ := ioutil.ReadFile(cfg.Directories.Upload + diskid + "/" + filename)
 	md5_t := md5.New()
 	md5_t.Write(filedat_t)
 	fmt.Fprintf(w, "md5: %x\n", md5_t.Sum(nil))
