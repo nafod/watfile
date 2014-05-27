@@ -8,9 +8,8 @@ Setup
 
 First, you must install the dependencies [gcfg](https://code.google.com/p/gcfg/) and [mysql](https://github.com/go-sql-driver/mysql).
 
-`$ go get code.google.com/p/gcfg`
-
-`$ go get github.com/go-sql-driver/mysql`
+    go get code.google.com/p/gcfg
+    go get github.com/go-sql-driver/mysql
 
 Then, copy `watfile.conf.default` to `watfile.conf` and edit the configuration settings. In particular, make sure to include the relevant information to connect to the database.
 
