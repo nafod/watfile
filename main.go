@@ -15,10 +15,7 @@ type Config struct {
 	}
 
 	Database struct {
-		Username string
-		Password string
-		Host     string
-		Name     string
+		DSN     string
 	}
 
 	Toggles struct {

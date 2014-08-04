@@ -32,7 +32,12 @@ func Init(cfg Config) *sql.DB {
 		log.Printf("[LOG] Initializing upload directory")
 	}
 
-	db, err := sql.Open("mysql", cfg.Database.Username+":"+cfg.Database.Password+"@"+cfg.Database.Host+"/"+cfg.Database.Name)
+	db, err := sql.Open("mysql", cfg.Database.DSN)
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.Ping()
 	if err != nil {
 		panic(err)
 	}
