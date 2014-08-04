@@ -31,6 +31,11 @@ func Init(cfg Config) *sql.DB {
 		os.Mkdir(cfg.Directories.Upload, perm)
 		log.Printf("[LOG] Initializing upload directory")
 	}
+	exists, _ = Exists(cfg.Directories.Ratelimit)
+	if exists == false {
+		os.Mkdir(cfg.Directories.Ratelimit, perm)
+		log.Printf("[LOG] Initializing rate limit directory")
+	}
 
 	db, err := sql.Open("mysql", cfg.Database.DSN)
 	if err != nil {

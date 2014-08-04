@@ -74,7 +74,7 @@
                     console.log(data.result.files);
                     $.each(data.result.files, function (index, file) {
                         var ext = file.Name.split(".")[file.Name.split(".").length - 1];
-                        $("#status").append("<pre><a href=\"http://s.watfile.com/"+file.ID+'.'+ext+"\" class=\"uploaded\" target=\"_blank\">http://s.watfile.com/"+file.ID+'.'+ext+"</a> ( "+file.Name+" )</pre");
+                        $("#status").append("<pre><a href=\"//" + window.location.hostname + "/"+file.ID+'.'+ext+"\" class=\"uploaded\" target=\"_blank\">http://" + window.location.hostname + "/"+file.ID+'.'+ext+"</a> ( "+file.Name+" )</pre");
                     });
                 }
             });
