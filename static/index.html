@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html>
     <head>
-        <title>watfile</title>
+        <title>up</title>
         <meta charset="utf-8" />
         <!--[if lte IE 8]><script src="assets/js/html5shiv.js" type="text/javascript"></script><![endif]-->
         <script src="js/skel.min.js">
@@ -21,18 +21,9 @@
     </head>
     <body>
         <div class="container">
-            <!-- Header -->
-                <div id="header" class="row">
-                    <nav id="nav" class="-6u 6u">
-                        <a href="#">Home</a>
-                        <a href="#">About</a>
-                        <a href="#">Login</a>
-                        <a href="#">Register</a>
-                    </nav>
-                </div>
             <!-- Hero -->
                 <section id="hero">
-                    <h2>watfile.</h2>
+                    <h2>up.</h2>
                     <p>A one-click uploader for all of your files.</p>
                     <input type="file" name="upload" data-url="upload" id="elem" multiple style="display:none"><a href="#" id="select" class="button">Upload a file</a>
                     <div id="status"></div>
@@ -41,7 +32,7 @@
                 <div class="row">
                     <section class="4u">
                         <h2>Upload from any device</h2>
-                        <p>watfile works on all your devices, from your laptop to your smartphone, so you never have to be caught without a quick backup.</p>
+                        <p>up works on all your devices, from your laptop to your smartphone, so you never have to be caught without a quick backup.</p>
                     </section>
                     <section class="4u">
                         <h2>Permanent links</h2>
@@ -54,27 +45,31 @@
                 </div>
             <!-- Footer -->
                 <div id="footer">
-                    &copy; watfile
+                    &copy; n0h.org
                 </div>
         </div>
         <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:300,300italic,600|Source+Code+Pro" rel="stylesheet" />
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-        <script src="js/vendor/jquery.ui.widget.js"></script>
-        <script src="js/jquery.iframe-transport.js"></script>
-        <script src="js/jquery.fileupload.js"></script>
-        <script src='js/fastclick.js'></script>
+        <script src="js/vendor/jquery.ui.widget.min.js"></script>
+        <script src="js/jquery.iframe-transport.min.js"></script>
+        <script src="js/jquery.fileupload.min.js"></script>
+        <script src='js/fastclick.min.js'></script>
         <script>
         $(function () {
             $(function() { FastClick.attach(document.body); });
             $('#select').click(function (e) { $('#elem').click(); e.preventDefault(); });
             $('#elem').fileupload({
                 dataType: 'json',
-                progressall: function(e, data) { console.log("gottem"); },
+		maxFileSize: 10485760,
+		minFileSize: 1,
+                progressall: function(e, data) { var p = parseInt(data.loaded / data.total * 100, 10); $("#select").text("Uploading (" + p + "%)"); },
+		start: function(e) { $("#select").text("Uploading (0%)"); },
+		stop: function(e) { $("#select").text("Upload a file"); },
                 done: function (e, data) {
                     console.log(data.result.files);
                     $.each(data.result.files, function (index, file) {
                         var ext = file.Name.split(".")[file.Name.split(".").length - 1];
-                        $("#status").append("<pre><a href=\"//" + window.location.hostname + "/"+file.ID+'.'+ext+"\" class=\"uploaded\" target=\"_blank\">http://" + window.location.hostname + "/"+file.ID+'.'+ext+"</a> ( "+file.Name+" )</pre");
+                        $("#status").append("<pre><a href=\"//down.n0h.org/"+file.ID+'.'+ext+"\" class=\"uploaded\" target=\"_blank\">http://down.n0h.org/"+file.ID+'.'+ext+"</a> ( "+file.Name+" )</pre");
                     });
                 }
             });

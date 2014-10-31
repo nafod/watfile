@@ -82,26 +82,6 @@ func main() {
 			DeleteHandler(w, r, db)
 		})
 	*/
-	/* API paths */
-	//http.HandleFunc("/api/v1/upload", func(w http.ResponseWriter, r *http.Request) {
-	//	APIUploadHandler(w, r)
-	//})
-
-	/*http.HandleFunc("/api/v1/dl", func(w http.ResponseWriter, r *http.Request) {
-		APIDownloadHandler(w, r)
-	})*/
-
-	/*http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		LoginHandler(w, r, mc)
-	})
-
-	http.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
-		LogoutHandler(w, r, mc)
-	})
-
-	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
-		RegisterHandler(w, r, mc)
-	})*/
 
 	log.Fatal(http.ListenAndServe(cfg.Main.IP, nil))
 	log.Printf("[LOG] Now listening on %s", cfg.Main.IP)
