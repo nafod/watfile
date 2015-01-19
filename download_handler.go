@@ -17,20 +17,20 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 	request_id_t := strings.TrimSpace(r.FormValue("id"))
 	if len(request_id_t) == 0 {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
-        log.Printf("[LOG] No request passed\n")
+		log.Printf("[LOG] No request passed\n")
 		return
 	}
 
-    /* Remoev leadinig slash if passed via arg */
-    if request_id_t[0] == '/' {
-        request_id_t = request_id_t[1:]
-    }
+	/* Remove leading slash if passed via arg */
+	if request_id_t[0] == '/' {
+		request_id_t = request_id_t[1:]
+	}
 
 	request_commands := strings.Split(request_id_t, "/")
 	request_id := strings.Split(request_commands[0], ".")[0]
 	if len(request_id) == 0 {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
-        log.Printf("[LOG] Invalid format for download request\n")
+		log.Printf("[LOG] Invalid format for download request\n")
 		return
 	}
 
@@ -41,8 +41,8 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 	defer dbstmt.Close()
 
 	dbrow := db.QueryRow(request_id)
-    */
-    dbrow := db.QueryRow("SELECT name, size, diskid, uploaded FROM files WHERE fileid = ?", request_id)
+	*/
+	dbrow := db.QueryRow("SELECT name, size, diskid, uploaded FROM files WHERE fileid = ?", request_id)
 	var filename string
 	var filesize int64
 	var diskid string
@@ -51,7 +51,7 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 	err := dbrow.Scan(&filename, &filesize, &diskid, &uploaded)
 	if err != nil {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
-        log.Printf("[LOG] Requested file does not exist\n")
+		log.Printf("[LOG] Requested file does not exist\n")
 		return
 	}
 

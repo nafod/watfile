@@ -3,8 +3,8 @@ package main
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 	"math/rand"
-    "log"
 	"os"
 	"runtime"
 	"time"

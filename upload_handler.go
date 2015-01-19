@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
-    "time"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type UploadedFile struct {
@@ -32,7 +32,7 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 	/* Check if IP is currently ratelimited */
 	if RateLimit(cfg, real_ip_t) {
 		fmt.Fprintf(w, MakeResult(r, "rate", ""))
-        log.Printf("[LOG] IP %s was blocked from uploading due to rate limiting\n", real_ip_t)
+		log.Printf("[LOG] IP %s was blocked from uploading due to rate limiting\n", real_ip_t)
 		return
 	}
 
@@ -44,7 +44,7 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 	/* No files actually uploaded */
 	if ok != true || len(files_t) == 0 {
 		fmt.Fprintf(w, MakeResult(r, "error", ""))
-        log.Printf("[LOG] Invalid file was uploaded (source IP: %s)\n", real_ip_t)
+		log.Printf("[LOG] Invalid file was uploaded (source IP: %s)\n", real_ip_t)
 		return
 	}
 
@@ -53,7 +53,7 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 	dbtxt, err := db.Begin()
 	if err != nil {
 		/* Database problem, likely fatal */
-        dbtxt.Rollback()
+		dbtxt.Rollback()
 		panic(err)
 	}
 
@@ -66,14 +66,14 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 		size_t, err := f.Read(buffer_t)
 		if err != nil {
 			ret_files = append(ret_files, UploadedFile{"", "", "error"})
-            log.Printf("[LOG] Uploaded file couldn't be read (source IP: %s)\n", real_ip_t)
+			log.Printf("[LOG] Uploaded file couldn't be read (source IP: %s)\n", real_ip_t)
 			continue
 		}
 
 		/* File is bigger than the maximum filesize */
 		if uint64(size_t) > cfg.Limits.MaxFilesize+1 {
 			ret_files = append(ret_files, UploadedFile{"", "", "error"})
-            log.Printf("[LOG] File uploaded was over max size (size: %d)\n", size_t)
+			log.Printf("[LOG] File uploaded was over max size (size: %d)\n", size_t)
 			continue
 		}
 
@@ -96,21 +96,21 @@ func UploadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.D
 			continue
 		}*/
 
-        dbstmt, err := dbtxt.Prepare("INSERT INTO files(name, size, md5, fileid, diskid, deleteid, uploaded, downloads, views, author) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-        if err != nil {
-            dbtxt.Rollback()
-            panic(err)
-        }
-        defer dbstmt.Close()
+		dbstmt, err := dbtxt.Prepare("INSERT INTO files(name, size, md5, fileid, diskid, deleteid, uploaded, downloads, views, author) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+		if err != nil {
+			dbtxt.Rollback()
+			panic(err)
+		}
+		defer dbstmt.Close()
 
-        _, err = dbstmt.Exec(file_t.Filename, size_t, hash_t, final_id, hash_t, delete_id, time.Now().Unix(), 0, 0, 0)
-        if err != nil {
-            dbtxt.Rollback()
-            panic(err)
-        }
-        if exists_t == false {
-            ioutil.WriteFile(cfg.Directories.Upload + hash_t, buffer_t, os.ModePerm)
-        }
+		_, err = dbstmt.Exec(file_t.Filename, size_t, hash_t, final_id, hash_t, delete_id, time.Now().Unix(), 0, 0, 0)
+		if err != nil {
+			dbtxt.Rollback()
+			panic(err)
+		}
+		if exists_t == false {
+			ioutil.WriteFile(cfg.Directories.Upload+hash_t, buffer_t, os.ModePerm)
+		}
 		ret_files = append(ret_files, UploadedFile{file_t.Filename, final_id, ""})
 	}
 

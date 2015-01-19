@@ -15,7 +15,7 @@ type Config struct {
 	}
 
 	Database struct {
-		DSN     string
+		DSN string
 	}
 
 	Toggles struct {
