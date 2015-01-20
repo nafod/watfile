@@ -42,7 +42,7 @@ func DownloadHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql
 	err := db.QueryRow("SELECT name, size, diskid, uploaded FROM files WHERE fileid = ?", request_id).Scan(&filename, &filesize, &diskid, &uploaded)
 	if err != nil {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
-		log.Printf("[LOG] Requested file does not exist\n")
+		log.Printf("[LOG] Requested filewat does not exist\n")
 		return
 	}
 
