@@ -37,13 +37,12 @@ func FileHandler(cfg Config, w http.ResponseWriter, r *http.Request, db *sql.DB)
 		return
 	}
 
-	dbrow := db.QueryRow("SELECT name, size, diskid, uploaded FROM files WHERE fileid = ?", request_id)
 	var filename string
 	var filesize int64
 	var diskid string
 	var uploaded int64
 
-	err := dbrow.Scan(&filename, &filesize, &diskid, &uploaded)
+	err := db.QueryRow("SELECT name, size, diskid, uploaded FROM files WHERE fileid = ?", request_id).Scan(&filename, &filesize, &diskid, &uploaded)
 	if err != nil {
 		http.Redirect(w, r, cfg.Main.Domain, 303)
 		log.Printf("[LOG] Requested file does not exist1\n")

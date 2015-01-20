@@ -56,8 +56,7 @@ func main() {
 	var cfg Config
 	err := gcfg.ReadFileInto(&cfg, "watfile.conf")
 	if err != nil {
-		/* Couldn't read the config file */
-		panic(err)
+		log.Panicf("[ERR] Could not read watfile.conf")
 	}
 
 	/* Create initial directories, sets GOMAXPROC, and seeds the PRNG */

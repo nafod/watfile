@@ -6,10 +6,7 @@ IP = ":31114"
 Domain = "http://watfile.com/"
 
 [Database]
-Username = ""
-Password = ""
-Host = ""
-Name = ""
+DSN = ""
 
 [Toggles]
 UseRatelimit = true
